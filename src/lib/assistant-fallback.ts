@@ -138,6 +138,7 @@ const T = {
     toilets: "Toalety w pobliżu celu:",
     noToilets: "Brak toalet publicznych w promieniu 600 m od celu w danych.",
     help: "Napisz np.: „Jadę wózkiem z przystanku Teatr Bagatela do Sukiennic”.",
+    rest: (n: number, gap: number) => `• Miejsca odpoczynku: ${n} ławek przy trasie, najdłuższy odcinek bez ławki ok. ${gap} m.`,
     verdict: { meets: "spełnia wymagania", barrier: "bariery", incomplete: "niepełne dane" } as Record<string, string>,
     yes: "tak",
     no: "nie",
@@ -155,6 +156,7 @@ const T = {
     toilets: "Toilets near the destination:",
     noToilets: "No public toilets within 600 m of the destination in the data.",
     help: "Try e.g.: “I use a wheelchair, from Teatr Bagatela stop to Sukiennice”.",
+    rest: (n: number, gap: number) => `• Places to rest: ${n} benches along the route, longest stretch without a bench approx. ${gap} m.`,
     verdict: { meets: "meets your needs", barrier: "barriers", incomplete: "incomplete data" } as Record<string, string>,
     yes: "yes",
     no: "no",
@@ -214,11 +216,21 @@ export async function fallbackAssistant(req: AssistantRequest): Promise<Assistan
       to_lat: to.lat,
       to_lon: to.lon,
       to_name: to.name,
-    })) as { error?: string; verdict?: string; distance_m?: number; requirements?: { detail: string }[] };
+    })) as {
+      error?: string;
+      verdict?: string;
+      distance_m?: number;
+      requirements?: { detail: string }[];
+      rest_benches_along_route?: number;
+      longest_stretch_without_bench_m?: number;
+    };
     if (r.error) lines.push(r.error);
     else {
       lines.push(m.route(from?.name ?? "📍", to.name, r.distance_m ?? 0, m.verdict[r.verdict ?? ""] ?? ""));
       for (const q of r.requirements ?? []) lines.push(`• ${q.detail}`);
+      if (r.rest_benches_along_route !== undefined) {
+        lines.push(m.rest(r.rest_benches_along_route, r.longest_stretch_without_bench_m ?? 0));
+      }
     }
   }
 

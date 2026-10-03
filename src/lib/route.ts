@@ -11,6 +11,7 @@ const SAMPLE_M = 8;
 const MATCH_M = 12;
 const KERB_M = 7;
 const STEPS_MATCH_M = 5;
+const BENCH_M = 20;
 const TYPICAL_STEP_CM = 15;
 const MAX_INCLINE = 8;
 
@@ -39,6 +40,7 @@ function distToSegment(p: LatLon, a: LatLon, b: LatLon): number {
 export class PathIndex {
   private cells = new Map<string, { way: PathWay; a: LatLon; b: LatLon }[]>();
   private kerbCells = new Map<string, KerbNode[]>();
+  private benchCells = new Map<string, LatLon[]>();
   readonly data: PathsFile;
   constructor(data: PathsFile) {
     this.data = data;
@@ -50,6 +52,7 @@ export class PathIndex {
       }
     }
     for (const k of data.kerbs) this.push(this.kerbCells, this.key([k.lat, k.lon]), k);
+    for (const b of data.benches ?? []) this.push(this.benchCells, this.key(b), b);
   }
   private key(p: LatLon) {
     return `${Math.floor(p[0] * 1000)}:${Math.floor(p[1] * 650)}`;
@@ -88,6 +91,12 @@ export class PathIndex {
     if (steps && steps.d <= STEPS_MATCH_M && (!path || steps.d + 4 < path.d)) return steps.way;
     return path?.way;
   }
+  get hasBenchData(): boolean {
+    return (this.data.benches?.length ?? 0) > 0;
+  }
+  benchesNear(p: LatLon): LatLon[] {
+    return this.near(this.benchCells, p).filter((b) => meters(p, b) <= BENCH_M);
+  }
   kerbsNear(p: LatLon): KerbNode[] {
     return this.near(this.kerbCells, p).filter((k) => meters(p, [k.lat, k.lon]) <= KERB_M);
   }
@@ -108,6 +117,8 @@ export interface RouteAssessment {
   steps: { flights: number; count?: number };
   kerbs: { raised: number; lowered: number; flush: number };
   maxIncline?: number;
+  /** Miejsca odpoczynku: ławki przy trasie i najdłuższy odcinek bez ławki (informacyjnie). */
+  rest?: { benches: number; longestGapM: number };
   /** Udział trasy dopasowanej do odcinków OSM z danymi o nawierzchni (0–1). */
   coverage: number;
   segments: RouteSegment[];
@@ -170,6 +181,9 @@ export function assessRoute(line: LatLon[], index: PathIndex, p: Profile, locale
   const surfaces: Record<string, number> = {};
   const seenSteps = new Set<PathWay>();
   const seenKerbs = new Set<KerbNode>();
+  const seenBenches = new Set<LatLon>();
+  let lastRestAt = 0;
+  let longestGap = 0;
   let maxIncline: number | undefined;
   let matchedWithSurface = 0;
   let total = 0;
@@ -177,6 +191,12 @@ export function assessRoute(line: LatLon[], index: PathIndex, p: Profile, locale
 
   for (const { p: pt, len } of sample(line)) {
     total += len;
+    const benches = index.benchesNear(pt);
+    if (benches.length) {
+      longestGap = Math.max(longestGap, total - lastRestAt);
+      lastRestAt = total;
+      for (const b of benches) seenBenches.add(b);
+    }
     const way = index.nearestWay(pt);
     let kind: SegmentKind = "unknown";
     if (way?.h === "steps") {
@@ -267,6 +287,9 @@ export function assessRoute(line: LatLon[], index: PathIndex, p: Profile, locale
     steps: { flights, count: stepCount },
     kerbs,
     maxIncline,
+    rest: index.hasBenchData
+      ? { benches: seenBenches.size, longestGapM: r(Math.max(longestGap, total - lastRestAt)) }
+      : undefined,
     coverage: total ? Math.round((matchedWithSurface / total) * 100) / 100 : 0,
     segments,
     dataDate: index.data.fetchedAt,

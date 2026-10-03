@@ -200,6 +200,9 @@ const pl = {
   routeNoData: "bez danych",
   routeLegend: { ok: "bez utrudnień", warn: "utrudnienie", barrier: "bariera", unknown: "brak danych" },
   routeSources: "Źródła",
+  routeRest: (n: number, gap: number) =>
+    `${n} ${n === 1 ? "ławka" : "ławek"} przy trasie · najdłuższy odcinek bez ławki ok. ${gap} m`,
+  routeRestTitle: "Miejsca odpoczynku",
   routeVerdictTitle: { meets: "Trasa bez barier dla Ciebie", barrier: "Bariery na trasie", incomplete: "Niepełne dane o trasie" },
   routeMapLabel: "Mapa trasy. Opis odcinków jest dostępny w formie tekstowej powyżej.",
   /** Opisy źródeł — w polskiej wersji bierzemy je z rejestru SOURCES. */
@@ -393,6 +396,8 @@ const en: Strings = {
   routeNoData: "no data",
   routeLegend: { ok: "no obstacles", warn: "obstacle", barrier: "barrier", unknown: "no data" },
   routeSources: "Sources",
+  routeRest: (n, gap) => `${n} ${n === 1 ? "bench" : "benches"} along the route · longest stretch without a bench approx. ${gap} m`,
+  routeRestTitle: "Places to rest",
   routeVerdictTitle: { meets: "Barrier-free route for you", barrier: "Barriers on the route", incomplete: "Incomplete route data" },
   routeMapLabel: "Route map. A text description of the segments is available above.",
   sourceDescriptions: {

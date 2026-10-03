@@ -125,12 +125,15 @@ test("trasa: schody to bariera dla wózka, odcinki bez danych nie są 'bez barie
       { h: "steps", sc: 12, g: [[50.001, 19.003], [50.001, 19.004]] },
     ],
     kerbs: [{ k: "lowered", lat: 50.001, lon: 19.002 }],
+    benches: [[50.00105, 19.0015]],
   });
   const line: [number, number][] = [[50.001, 19.001], [50.001, 19.004], [50.005, 19.004]];
   const wheel = assessRoute(line, index, PRESETS.wheelchair_manual);
   assert.equal(wheel.verdict, "barrier");
   assert.equal(wheel.steps.flights, 1);
   assert.ok((wheel.surfaces.unknown ?? 0) > 300);
+  assert.equal(wheel.rest?.benches, 1);
+  assert.ok((wheel.rest?.longestGapM ?? 0) > 400);
   const stroller = assessRoute(line, index, PRESETS.stroller);
   assert.notEqual(stroller.verdict, "barrier");
 });

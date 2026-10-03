@@ -115,6 +115,15 @@ export default function RouteScreen() {
           );
         })}
       </Card>
+      {r.rest && (
+        <Card style={{ flexDirection: "row", gap: 12, alignItems: "center", marginTop: 12 }}>
+          <Icon name="seat-outline" size={26} color={t.accent} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: t.text, fontWeight: "700", fontSize: 16 }}>{S.routeRestTitle}</Text>
+            <Text style={{ color: t.text, fontSize: 15 }}>{S.routeRest(r.rest.benches, r.rest.longestGapM)}</Text>
+          </View>
+        </Card>
+      )}
       <P muted style={{ marginTop: 8 }}>
         {S.routeChosen(data.alternatives)}
       </P>

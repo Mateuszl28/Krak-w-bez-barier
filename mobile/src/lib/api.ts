@@ -119,6 +119,7 @@ export interface RouteResult {
     steps: { flights: number; count?: number };
     kerbs: { raised: number; lowered: number; flush: number };
     maxIncline?: number;
+    rest?: { benches: number; longestGapM: number };
     coverage: number;
     segments: { kind: "ok" | "warn" | "barrier" | "unknown"; coords: [number, number][] }[];
     dataDate: string;

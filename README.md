@@ -108,6 +108,10 @@ Sprawdzone, ale nieużyte: GTFS ZTP (pola `wheelchair_boarding` / `wheelchair_ac
 ostatniej edycji rekordu u wydawcy (dane miejskie), data deklaracji lub zgłoszenia. Informacje starsze niż 2 lata są
 oznaczane. Zgodność co najmniej dwóch niezależnych źródeł daje status „potwierdzone”; rozbieżność — „sprzeczne dane”.
 
+**Automatyczna aktualizacja.** Workflow GitHub Actions (`.github/workflows/update-data.yml`) codziennie pobiera
+dane z OSM (miejsca i sieć piesza) i otwarte dane Krakowa, uruchamia testy i zapisuje zmiany w repozytorium —
+bez ręcznego utrzymywania bazy. Każde źródło jest osobnym krokiem; awaria jednego nie blokuje pozostałych.
+
 **Niedostępność źródła.** Importy zapisują kopię z datą i przy błędzie zostawiają poprzednią. Gdy źródła nie da się
 wczytać, aplikacja to komunikuje i nie pokazuje miejsc jako „bez barier”. Demo: `/?awaria=osm`,
 `/miejsce/<id>?awaria=osm`.

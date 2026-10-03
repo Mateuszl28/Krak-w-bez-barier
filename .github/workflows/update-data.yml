@@ -1,0 +1,60 @@
+# Codzienna aktualizacja danych bez ręcznej pracy: OpenStreetMap (miejsca i sieć
+# piesza) oraz otwarte dane Krakowa. Każde źródło to osobny krok — awaria jednego
+# (np. przeciążony Overpass) nie blokuje pozostałych, a w repozytorium zostaje
+# ostatnia poprawna kopia z datą.
+name: Aktualizacja danych
+
+on:
+  schedule:
+    - cron: "15 3 * * *" # codziennie ok. 5:15 czasu polskiego
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Otwarte dane Krakowa (toalety, parkingi OzN, przystanki)
+        continue-on-error: true
+        run: npm run ingest:official
+      - name: OSM — miejsca, Kraków
+        continue-on-error: true
+        run: npm run ingest -- krakow
+      - name: OSM — sieć piesza, Kraków
+        continue-on-error: true
+        run: npm run ingest:paths -- krakow
+      - name: OSM — miejsca, Warszawa
+        continue-on-error: true
+        run: npm run ingest -- warszawa
+      - name: OSM — sieć piesza, Warszawa
+        continue-on-error: true
+        run: npm run ingest:paths -- warszawa
+
+      - name: Testy logiki oceny na nowych danych
+        run: npm test
+
+      - name: Zapis zmian
+        run: |
+          if git diff --quiet -- data/; then
+            echo "Brak zmian w danych."
+            exit 0
+          fi
+          git config user.name "aktualizacja-danych"
+          git config user.email "aktualizacja-danych@users.noreply.github.com"
+          git add data/
+          git commit -m "Aktualizacja danych $(date -u +%Y-%m-%d)"
+          git push

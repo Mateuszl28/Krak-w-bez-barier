@@ -19,7 +19,9 @@ const query = `[out:json][timeout:180];
 );
 out tags geom;
 node["kerb"](${bbox});
-out;`;
+out;
+node["amenity"="bench"](${bbox});
+out skel;`;
 
 type El = {
   type: string;
@@ -34,6 +36,7 @@ try {
   const r5 = (x: number) => Math.round(x * 1e5) / 1e5;
   const ways: PathWay[] = [];
   const kerbs: PathsFile["kerbs"] = [];
+  const benches: [number, number][] = [];
   for (const el of data.elements) {
     const t = el.tags ?? {};
     if (el.type === "way" && el.geometry) {
@@ -47,12 +50,14 @@ try {
     } else if (el.type === "node" && el.lat !== undefined && el.lon !== undefined) {
       const k = normalizeKerb(t.kerb);
       if (k) kerbs.push({ k, lat: r5(el.lat), lon: r5(el.lon) });
+      // "out skel" nie zwraca tagów — węzły bez tagów to ławki z drugiego zapytania.
+      else if (!el.tags) benches.push([r5(el.lat), r5(el.lon)]);
     }
   }
-  const out: PathsFile = { fetchedAt: new Date().toISOString(), bbox: [s, w, n, e], ways, kerbs };
+  const out: PathsFile = { fetchedAt: new Date().toISOString(), bbox: [s, w, n, e], ways, kerbs, benches };
   await writeFile(new URL("paths.json", dir), JSON.stringify(out));
   const withSurface = ways.filter((x) => x.s).length;
-  console.log(`Zapisano ${ways.length} odcinków (${withSurface} z nawierzchnią), ${kerbs.length} krawężników. Źródło: ${endpoint}`);
+  console.log(`Zapisano ${ways.length} odcinków (${withSurface} z nawierzchnią), ${kerbs.length} krawężników, ${benches.length} ławek. Źródło: ${endpoint}`);
 } catch (err) {
   console.error(`Overpass niedostępny (${(err as Error).message}). Zostawiam poprzednie dane.`);
   process.exit(1);

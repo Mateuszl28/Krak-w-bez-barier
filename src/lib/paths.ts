@@ -25,6 +25,8 @@ export interface PathsFile {
   bbox: [number, number, number, number];
   ways: PathWay[];
   kerbs: KerbNode[];
+  /** Ławki i inne miejsca do siedzenia (amenity=bench, leisure=picnic_table) — [lat, lon]. */
+  benches?: [number, number][];
 }
 
 const SURFACE: Record<string, string> = {

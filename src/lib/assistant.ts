@@ -314,6 +314,8 @@ export class Tools {
           distance_m: r.distanceM,
           requirements: r.requirements.map((x) => ({ label: x.label, outcome: x.outcome, detail: x.detail })),
           surfaces_m: r.surfaces,
+          rest_benches_along_route: r.rest?.benches,
+          longest_stretch_without_bench_m: r.rest?.longestGapM,
           surface_data_coverage: r.coverage,
           inside_sidewalk_data_area: plan.insideDataArea,
           variants_checked: plan.alternatives,

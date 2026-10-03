@@ -16,6 +16,7 @@ export interface RouteData {
     requirements: RequirementResult[];
     surfaces: Record<string, number>;
     coverage: number;
+    rest?: { benches: number; longestGapM: number };
     segments: { kind: "ok" | "warn" | "barrier" | "unknown"; coords: [number, number][] }[];
     dataDate: string;
   };
@@ -127,6 +128,12 @@ function RouteResult({ data }: { data: RouteData }) {
           </li>
         ))}
       </ul>
+      {r.rest && (
+        <p style={{ marginTop: 12 }}>
+          <strong>Miejsca odpoczynku:</strong> {r.rest.benches} {r.rest.benches === 1 ? "ławka" : "ławek"} przy trasie
+          (dane OpenStreetMap), najdłuższy odcinek bez ławki ok. {r.rest.longestGapM} m.
+        </p>
+      )}
       <p className="lead" style={{ marginTop: 8 }}>
         Sprawdziliśmy {data.alternatives} {data.alternatives === 1 ? "wariant" : "warianty"} trasy i wybraliśmy ten z
         najmniejszą liczbą barier.
