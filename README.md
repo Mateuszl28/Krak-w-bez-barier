@@ -61,6 +61,10 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - **Panel moderacji** (`/moderacja`, hasło w zmiennej `ADMIN_PASSWORD`, bez niej panel jest wyłączony):
   weryfikacja i odrzucanie deklaracji właścicieli, usuwanie spamu ze zgłoszeń. Zweryfikowana deklaracja przechodzi
   ze źródła „oczekujące na weryfikację” do „deklaracje właścicieli” z datą weryfikacji.
+- **Raport jakości danych** (`/raport`, `GET /api/v1/stats`): pokrycie danymi według kategorii, udział miejsc ze
+  szczegółami vs. tylko ogólną oceną, dane starsze niż 2 lata, potwierdzenia i sprzeczności między źródłami — lista
+  zadań do weryfikacji. Kraków: 59% miejsc ma jakąkolwiek informację, ale tylko 5% ma szczegóły (wejście, progi,
+  drzwi, toaleta) — tę lukę wypełniają deklaracje właścicieli i zgłoszenia.
 - **Wiele miast:** Kraków (OSM + dane ZTP) i Warszawa (OSM: 7258 miejsc, sieć piesza centrum — 13 260 odcinków, 1559 krawężników) — drugie miasto dodane wyłącznie plikiem
   `data/warszawa/city.json` i importem, bez zmian w kodzie. Wybór miasta w aplikacji, `GET /api/v1/cities`.
 - Sprawdzenie obiektu na żywo w OpenStreetMap z obsługą niedostępności źródła.
