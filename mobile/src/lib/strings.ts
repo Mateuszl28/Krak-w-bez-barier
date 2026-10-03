@@ -185,6 +185,11 @@ const pl = {
   ],
   you: "Ty",
   assistantName: "Asystent",
+  // ulubione
+  save: "Zapisz miejsce",
+  saved: "Zapisane",
+  yourPlaces: "Twoje miejsca",
+  savedHint: "Zapisane miejsca otwierają się także bez zasięgu.",
   // trasa
   routeTitle: "Trasa dojścia",
   routeFromHere: "Trasa dojścia stąd",
@@ -382,6 +387,10 @@ const en: Strings = {
   ],
   you: "You",
   assistantName: "Assistant",
+  save: "Save place",
+  saved: "Saved",
+  yourPlaces: "Your places",
+  savedHint: "Saved places open even without signal.",
   routeTitle: "Walking route",
   routeFromHere: "Walking route from here",
   routeFromMe: "Route from my location",

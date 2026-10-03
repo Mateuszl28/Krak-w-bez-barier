@@ -169,13 +169,13 @@ export function Chip({
   selected: boolean;
   onPress: () => void;
   icon?: IconName;
-  role?: "radio" | "checkbox";
+  role?: "radio" | "checkbox" | "button";
 }) {
   const t = useTheme();
   return (
     <Pressable
       accessibilityRole={role}
-      accessibilityState={{ checked: selected }}
+      accessibilityState={role === "button" ? undefined : { checked: selected }}
       accessibilityLabel={label}
       onPress={onPress}
       style={[

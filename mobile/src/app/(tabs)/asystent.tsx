@@ -144,7 +144,7 @@ export default function AssistantScreen() {
                     {m.reply.places.slice(0, 4).map((p) => (
                       <Chip
                         key={p.id}
-                        role="radio"
+                        role="button"
                         icon="map-marker"
                         label={p.name}
                         selected={false}

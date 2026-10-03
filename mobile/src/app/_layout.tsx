@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { FavoritesProvider } from "../lib/favorites";
 import { ProfileProvider } from "../lib/profile";
 import { SearchProvider } from "../lib/search";
 import { useT } from "../lib/strings";
@@ -11,8 +12,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ProfileProvider>
         <SearchProvider>
-          <StatusBar style="light" />
-          <AppStack />
+          <FavoritesProvider>
+            <StatusBar style="light" />
+            <AppStack />
+          </FavoritesProvider>
         </SearchProvider>
       </ProfileProvider>
     </SafeAreaProvider>

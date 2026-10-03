@@ -1,7 +1,7 @@
 import * as Location from "expo-location";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PlacesMap } from "../../components/PlacesMap";
 import { StopsList } from "../../components/StopsList";
@@ -23,6 +23,7 @@ import {
   verdictColors,
 } from "../../components/ui";
 import { API_URL, getPlace, liveCheck, sendReport, type LiveResult, type Loaded, type PlaceResponse } from "../../lib/api";
+import { useFavorites } from "../../lib/favorites";
 import { useProfile } from "../../lib/profile";
 import {
   FEATURE_ORDER,
@@ -42,6 +43,7 @@ export default function PlaceScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { profile, awaria, city } = useProfile();
+  const fav = useFavorites();
   const { s: S, L, V, locale } = useT();
   const [loaded, setLoaded] = useState<Loaded<PlaceResponse> | null>(null);
   const [error, setError] = useState("");
@@ -115,7 +117,25 @@ export default function PlaceScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: "" }} />
+      <Stack.Screen
+        options={{
+          title: "",
+          headerRight: () => {
+            const saved = fav.isFavorite(place.id);
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={saved ? S.saved : S.save}
+                accessibilityState={{ selected: saved }}
+                onPress={() => fav.toggle({ id: place.id, name: place.name, category: place.category, city })}
+                style={{ minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" }}
+              >
+                <Icon name={saved ? "star" : "star-outline"} size={28} color={t.heroText} />
+              </Pressable>
+            );
+          },
+        }}
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}>
         {/* Nagłówek z oceną */}
         <View style={[styles.hero, { backgroundColor: t.hero }]}>

@@ -27,6 +27,8 @@ samego modelu danych i tej samej logiki oceny co serwer (`src/lib` jest współd
 - Offline: ostatnio pobrane wyniki są zapisywane na telefonie i pokazywane z datą i ostrzeżeniem.
 - Tryb demonstracyjny awarii źródła (ekran „Źródła i metoda”).
 - Dostępność: role i etykiety dla TalkBack/VoiceOver, skalowanie tekstu systemowego, cele dotykowe ≥ 48 dp, tryb ciemny.
+- **Ulubione miejsca** — gwiazdka na karcie miejsca, sekcja „Twoje miejsca” na ekranie głównym; zapisane tylko na
+  telefonie, karty otwierają się także bez zasięgu.
 - **Polski i angielski** (dla turystów): język według ustawień telefonu, przełącznik w zakładce „Potrzeby”.
   Komunikaty oceny są we wspólnym module `src/lib/i18n.ts` — web, aplikacja i API mówią tak samo.
 

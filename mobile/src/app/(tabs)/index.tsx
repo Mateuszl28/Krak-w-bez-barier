@@ -15,6 +15,7 @@ import {
   verdictColors,
 } from "../../components/ui";
 import { listCities, type City } from "../../lib/api";
+import { useFavorites } from "../../lib/favorites";
 import { useProfile } from "../../lib/profile";
 import { useSearch, type Assessed } from "../../lib/search";
 import { useT } from "../../lib/strings";
@@ -28,6 +29,8 @@ export default function Search() {
   const insets = useSafeAreaInsets();
   const s = useSearch();
   const { city, setCity } = useProfile();
+  const { favorites } = useFavorites();
+  const myPlaces = favorites.filter((f) => f.city === city);
   const { s: S, L, locale } = useT();
   const [q, setQ] = useState(s.query);
   const [cities, setCities] = useState<City[]>([{ id: "krakow", name: "Kraków" }]);
@@ -147,6 +150,26 @@ export default function Search() {
             onPress={() => s.setOnlyMatching(!s.onlyMatching)}
           />
         </ScrollView>
+
+        {myPlaces.length > 0 && (
+          <View style={{ gap: 8 }}>
+            <Text accessibilityRole="header" style={{ color: t.text, fontWeight: "800", fontSize: 17, paddingHorizontal: 16 }}>
+              {S.yourPlaces}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+              {myPlaces.map((f) => (
+                <Chip
+                  key={f.id}
+                  role="button"
+                  icon="star"
+                  label={f.name}
+                  selected={false}
+                  onPress={() => router.push({ pathname: "/miejsce/[id]", params: { id: f.id } })}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={{ paddingHorizontal: 16, gap: 0 }}>
           {s.loaded?.cachedAt && (
