@@ -61,7 +61,7 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - **Panel moderacji** (`/moderacja`, hasło w zmiennej `ADMIN_PASSWORD`, bez niej panel jest wyłączony):
   weryfikacja i odrzucanie deklaracji właścicieli, usuwanie spamu ze zgłoszeń. Zweryfikowana deklaracja przechodzi
   ze źródła „oczekujące na weryfikację” do „deklaracje właścicieli” z datą weryfikacji.
-- **Wiele miast:** Kraków (OSM + dane ZTP) i Warszawa (OSM, 7258 miejsc) — drugie miasto dodane wyłącznie plikiem
+- **Wiele miast:** Kraków (OSM + dane ZTP) i Warszawa (OSM: 7258 miejsc, sieć piesza centrum — 13 260 odcinków, 1559 krawężników) — drugie miasto dodane wyłącznie plikiem
   `data/warszawa/city.json` i importem, bez zmian w kodzie. Wybór miasta w aplikacji, `GET /api/v1/cities`.
 - Sprawdzenie obiektu na żywo w OpenStreetMap z obsługą niedostępności źródła.
 - Widżet do osadzenia na stronie hotelu / wydarzenia (`/widget/<id>`, działa bez JavaScriptu).
@@ -72,7 +72,10 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
   wymagania i wywołuje nasze narzędzia: wyszukiwanie miejsc i przystanków, udogodnienia w pobliżu, szczegóły miejsca
   ze źródłami, ocenę trasy. **Wszystkie fakty pochodzą z narzędzi** — model nie ma własnej wiedzy o dostępności i ma
   zakaz traktowania braku danych jako dostępności. Odpowiedź ma przyciski „Pokaż trasę” i „Zastosuj te wymagania”.
-  Klucz `GEMINI_API_KEY` tylko na serwerze; bez klucza asystent jest wyłączony, reszta działa.
+  Klucz `GEMINI_API_KEY` tylko na serwerze. Przy limicie lub przeciążeniu Gemini — zapasowe modele Flash-Lite.
+  **Tryb awaryjny bez AI** (`src/lib/assistant-fallback.ts`): gdy AI jest niedostępne (brak klucza, limit, awaria),
+  reguły rozpoznają profil, potrzeby oraz start i cel („z X do Y”, „do Y z X”, „startuję z X”, samo miejsce), a
+  odpowiedź powstaje z tych samych narzędzi — z wyraźną informacją, że to tryb awaryjny.
 - **Ocena trasy dojścia** (`GET /api/v1/route`, ekran „Trasa dojścia” w aplikacji): od przystanku albo z lokalizacji
   użytkownika do miejsca. Warianty trasy z dwóch publicznych serwisów (OSRM — profil pieszy, Valhalla — tryb wózka)
   są dopasowywane do sieci pieszej OSM (14 676 odcinków centrum Krakowa, 76% z nawierzchnią; 713 krawężników) i

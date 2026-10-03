@@ -134,3 +134,29 @@ test("trasa: schody to bariera dla wózka, odcinki bez danych nie są 'bez barie
   const stroller = assessRoute(line, index, PRESETS.stroller);
   assert.notEqual(stroller.verdict, "barrier");
 });
+
+test("asystent awaryjny: rozpoznanie potrzeb, startu i celu", async () => {
+  const { parseRequest } = await import("./assistant-fallback.ts");
+  const a = parseRequest("Jadę wózkiem z przystanku Teatr Bagatela do Sukiennic. Którędy bez schodów?");
+  assert.equal(a.mobility, "wheelchair_manual");
+  assert.equal(a.from, "przystanku Teatr Bagatela");
+  assert.equal(a.to, "Sukiennic");
+  const b = parseRequest("Z wózkiem dziecięcym na Wawel — gdzie po drodze jest toaleta z przewijakiem?");
+  assert.equal(b.mobility, "stroller");
+  assert.equal(b.needToilet, true);
+  assert.equal(b.needChangingTable, true);
+  assert.equal(b.to, "Wawel");
+  assert.equal(b.from, undefined);
+  const d = parseRequest("Z wózkiem dziecięcym na Wawel. Startuję z Placu Wszystkich Świętych.");
+  assert.equal(d.from, "Placu Wszystkich Świętych");
+  assert.equal(d.to, "Wawel");
+  const e = parseRequest("Jadę wózkiem do Sukiennic z przystanku Filharmonia");
+  assert.equal(e.to, "Sukiennic");
+  assert.equal(e.from, "przystanku Filharmonia");
+  assert.equal(parseRequest("Muzeum Narodowe — czy wejdę wózkiem elektrycznym?").to, "Muzeum Narodowe");
+  const c = parseRequest("I use a power wheelchair, from Teatr Bagatela to Sukiennice, avoid cobbles");
+  assert.equal(c.mobility, "wheelchair_electric");
+  assert.equal(c.avoidCobbles, true);
+  assert.equal(c.from, "Teatr Bagatela");
+  assert.equal(c.to, "Sukiennice");
+});

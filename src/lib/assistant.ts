@@ -51,6 +51,8 @@ export interface AssistantResult {
   toolCalls: string[];
   /** Model, który udzielił odpowiedzi. */
   model?: string;
+  /** Odpowiedź z trybu awaryjnego (bez AI). */
+  fallback?: boolean;
 }
 
 const CATEGORIES: Category[] = [
@@ -173,15 +175,16 @@ function systemInstruction(req: AssistantRequest, cityName: string): string {
   ].join("\n");
 }
 
-class Tools {
+export class Tools {
   profile: Profile;
   route?: AssistantResult["route"];
   profileChanged = false;
   places = new Map<string, string>();
-  constructor(
-    private city: CityData,
-    private req: AssistantRequest,
-  ) {
+  private city: CityData;
+  private req: AssistantRequest;
+  constructor(city: CityData, req: AssistantRequest) {
+    this.city = city;
+    this.req = req;
     this.profile = req.profile;
   }
 
@@ -327,8 +330,10 @@ export class AssistantUnavailable extends Error {}
 
 /** Limit zapytań dostawcy AI (np. darmowy plan Gemini). */
 export class AssistantRateLimited extends Error {
-  constructor(readonly retryAfterS: number) {
+  readonly retryAfterS: number;
+  constructor(retryAfterS: number) {
     super("rate limited");
+    this.retryAfterS = retryAfterS;
   }
 }
 

@@ -16,5 +16,11 @@
     "osm",
     "owner_pending",
     "user_reports"
+  ],
+  "pathsBbox": [
+    52.222,
+    20.995,
+    52.252,
+    21.025
   ]
 }

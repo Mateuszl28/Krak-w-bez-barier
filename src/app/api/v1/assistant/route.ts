@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { AssistantRateLimited, AssistantUnavailable, askAssistant, type AssistantTurn } from "@/lib/assistant";
+import { askAssistant, type AssistantRequest, type AssistantTurn } from "@/lib/assistant";
+import { fallbackAssistant } from "@/lib/assistant-fallback";
 import { DEFAULT_PROFILE } from "@/lib/labels";
 import type { Profile } from "@/lib/model";
 import { rateLimiter, validCity } from "@/lib/validate";
@@ -48,42 +49,27 @@ export async function POST(req: Request) {
       ? (loc as [number, number])
       : undefined;
 
+  const request: AssistantRequest = {
+    message,
+    history,
+    city: validCity(body?.city),
+    locale: body?.lang === "en" ? "en" : "pl",
+    profile: validProfile(body?.profile),
+    location,
+  };
   try {
-    const result = await askAssistant({
-      message,
-      history,
-      city: validCity(body?.city),
-      locale: body?.lang === "en" ? "en" : "pl",
-      profile: validProfile(body?.profile),
-      location,
-    });
-    return NextResponse.json(result);
+    return NextResponse.json(await askAssistant(request));
   } catch (err) {
-    if (err instanceof AssistantRateLimited) {
-      const en = body?.lang === "en";
-      const secs = err.retryAfterS;
-      const wait =
-        secs < 90 ? `${secs} s` : secs < 5400 ? `${Math.round(secs / 60)} min` : `${Math.round(secs / 3600)} ${en ? "h" : "godz."}`;
+    // Brak klucza, limit lub awaria dostawcy AI → tryb awaryjny na regułach i tych samych danych.
+    console.warn("assistant fallback:", (err as Error).message.slice(0, 200));
+    try {
+      return NextResponse.json(await fallbackAssistant(request));
+    } catch (fallbackErr) {
+      console.error("assistant fallback error", fallbackErr);
       return NextResponse.json(
-        {
-          error: en
-            ? `The AI assistant has reached the free-plan request limit. Try again in about ${wait} — search and route checks work as usual.`
-            : `Asystent AI wyczerpał limit zapytań darmowego planu. Spróbuj za ok. ${wait} — wyszukiwarka i ocena tras działają normalnie.`,
-          retryAfterS: err.retryAfterS,
-        },
-        { status: 429, headers: { "retry-after": String(err.retryAfterS) } },
+        { error: "Asystent jest chwilowo niedostępny. Wyszukiwarka i ocena tras działają nadal." },
+        { status: 502 },
       );
     }
-    if (err instanceof AssistantUnavailable) {
-      return NextResponse.json(
-        { error: "Asystent AI nie jest skonfigurowany na tym serwerze (brak klucza Gemini)." },
-        { status: 503 },
-      );
-    }
-    console.error("assistant error", err);
-    return NextResponse.json(
-      { error: "Asystent AI jest chwilowo niedostępny. Wyszukiwarka i ocena tras działają nadal." },
-      { status: 502 },
-    );
   }
 }
