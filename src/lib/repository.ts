@@ -55,7 +55,7 @@ const REPORTS_FILE = process.env.VERCEL
   ? "/tmp/kbb-reports.json"
   : path.join(DATA_DIR, "cache", "reports.json");
 
-async function readStoredReports(): Promise<Report[]> {
+export async function readStoredReports(): Promise<Report[]> {
   try {
     return await readJson<Report[]>(REPORTS_FILE);
   } catch {
@@ -84,9 +84,11 @@ export interface PendingDeclaration {
   declaredAt: string;
   facts: Partial<Record<FeatureKey, FactValue>>;
   notes?: string;
+  /** Ustawiane przez moderatora po weryfikacji (kontakt z obiektem, zdjęcia, wizyta). */
+  verifiedAt?: string;
 }
 
-async function readPendingDeclarations(): Promise<PendingDeclaration[]> {
+export async function readPendingDeclarations(): Promise<PendingDeclaration[]> {
   try {
     return await readJson<PendingDeclaration[]>(DECLARATIONS_FILE);
   } catch {
@@ -100,6 +102,30 @@ export async function addDeclaration(d: PendingDeclaration): Promise<void> {
   await mkdir(path.dirname(DECLARATIONS_FILE), { recursive: true });
   await writeFile(DECLARATIONS_FILE, JSON.stringify(all, null, 2));
   cache.clear();
+}
+
+/** Moderacja: weryfikacja lub odrzucenie deklaracji, usunięcie zgłoszenia (np. spam). */
+export async function moderate(
+  action: "verify-declaration" | "reject-declaration" | "reject-report",
+  id: string,
+): Promise<boolean> {
+  if (action === "reject-report") {
+    const all = await readStoredReports();
+    const rest = all.filter((r) => r.id !== id);
+    if (rest.length === all.length) return false;
+    await writeFile(REPORTS_FILE, JSON.stringify(rest, null, 2));
+  } else {
+    const all = await readPendingDeclarations();
+    const d = all.find((x) => x.id === id);
+    if (!d) return false;
+    const next =
+      action === "reject-declaration"
+        ? all.filter((x) => x.id !== id)
+        : all.map((x) => (x.id === id ? { ...x, verifiedAt: new Date().toISOString().slice(0, 10) } : x));
+    await writeFile(DECLARATIONS_FILE, JSON.stringify(next, null, 2));
+  }
+  cache.clear();
+  return true;
 }
 
 function toFacts(
@@ -202,8 +228,12 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
     for (const d of pending) {
       const place = byId.get(d.placeId);
       if (!place) continue;
-      const note = [`${d.organization} — oczekuje na weryfikację`, d.notes].filter(Boolean).join(" — ");
-      place.facts.push(...toFacts(d.facts, "owner_pending", d.declaredAt, { note }));
+      // Zweryfikowana deklaracja staje się zwykłą deklaracją właściciela.
+      const note = d.verifiedAt
+        ? [`${d.organization} — zweryfikowano ${d.verifiedAt}`, d.notes].filter(Boolean).join(" — ")
+        : [`${d.organization} — oczekuje na weryfikację`, d.notes].filter(Boolean).join(" — ");
+      const sourceId = d.verifiedAt ? "owner_declarations" : "owner_pending";
+      place.facts.push(...toFacts(d.facts, sourceId, d.verifiedAt ?? d.declaredAt, { note }));
     }
     return { records: pending.length };
   });

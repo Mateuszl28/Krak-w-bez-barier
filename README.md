@@ -56,6 +56,9 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - **Deklaracja właściciela obiektu** (`/dla-firm/deklaracja/<id>`): formularz dla hotelu, muzeum, organizatora.
   Do czasu weryfikacji pokazywana jako „oczekująca na weryfikację” (niezweryfikowana), po wysłaniu — gotowy kod
   widżetu do osadzenia.
+- **Panel moderacji** (`/moderacja`, hasło w zmiennej `ADMIN_PASSWORD`, bez niej panel jest wyłączony):
+  weryfikacja i odrzucanie deklaracji właścicieli, usuwanie spamu ze zgłoszeń. Zweryfikowana deklaracja przechodzi
+  ze źródła „oczekujące na weryfikację” do „deklaracje właścicieli” z datą weryfikacji.
 - **Wiele miast:** Kraków (OSM + dane ZTP) i Warszawa (OSM, 7258 miejsc) — drugie miasto dodane wyłącznie plikiem
   `data/warszawa/city.json` i importem, bez zmian w kodzie. Wybór miasta w aplikacji, `GET /api/v1/cities`.
 - Sprawdzenie obiektu na żywo w OpenStreetMap z obsługą niedostępności źródła.
