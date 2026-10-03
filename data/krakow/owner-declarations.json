@@ -1,0 +1,50 @@
+{
+  "sourceId": "owner_declarations",
+  "note": "DANE PRZYKŁADOWE przygotowane na potrzeby demonstracji. Obiekty są fikcyjne.",
+  "declarations": [
+    {
+      "placeId": "demo-hotel",
+      "sample": true,
+      "declaredBy": "Recepcja hotelu (konto właściciela)",
+      "declaredAt": "2026-09-12",
+      "place": {
+        "name": "Hotel Przykładowy (demo)",
+        "category": "accommodation",
+        "lat": 50.0652,
+        "lon": 19.9415,
+        "address": "ul. Przykładowa 1"
+      },
+      "facts": {
+        "entrance": "level",
+        "step_height_cm": 1,
+        "door_width_cm": 95,
+        "elevator": true,
+        "toilet": true,
+        "changing_table": true,
+        "rest": true,
+        "parking": true,
+        "surface": "smooth"
+      },
+      "notes": "Wejście główne automatyczne, winda do wszystkich pięter, 2 pokoje przystosowane."
+    },
+    {
+      "placeId": "demo-cafe",
+      "sample": true,
+      "declaredBy": "Właściciel lokalu",
+      "declaredAt": "2022-04-03",
+      "place": {
+        "name": "Kawiarnia Przykładowa (demo)",
+        "category": "food",
+        "lat": 50.0598,
+        "lon": 19.9381,
+        "address": "ul. Testowa 7"
+      },
+      "facts": {
+        "entrance": "ramp",
+        "door_width_cm": 85,
+        "toilet": true,
+        "changing_table": false
+      }
+    }
+  ]
+}
