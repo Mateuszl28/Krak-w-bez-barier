@@ -150,6 +150,10 @@ Zgłoszenia użytkowników ─────────────────�
         <li>Profil potrzeb zapisuje się tylko w przeglądarce użytkownika (localStorage), nie na serwerze.</li>
         <li>Zgłoszenia są anonimowe: bez imienia, e-maila i adresu IP w zapisanym rekordzie; obowiązuje limit zgłoszeń.</li>
         <li>Lokalizacja jest używana tylko w przeglądarce do sortowania wyników i nie jest zapisywana.</li>
+        <li>
+          Asystent AI w aplikacji wysyła treść pytania (i lokalizację — tylko po jej włączeniu) do Google Gemini; rozmowy
+          nie są zapisywane na naszym serwerze.
+        </li>
         <li>Połączenia wyłącznie przez HTTPS.</li>
       </ul>
 

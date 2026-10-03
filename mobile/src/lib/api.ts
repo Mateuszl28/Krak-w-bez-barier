@@ -152,3 +152,29 @@ export async function getRoute(
   if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
   return body;
 }
+
+export interface AssistantReply {
+  reply: string;
+  route?: { from: [number, number]; to: [number, number]; fromName: string; toName: string };
+  profile?: Profile;
+  places: { id: string; name: string }[];
+}
+
+/** Asystent AI (Gemini po stronie serwera). Treść pytania trafia do Google; serwer jej nie zapisuje. */
+export async function askAssistant(input: {
+  message: string;
+  history: { role: "user" | "model"; text: string }[];
+  profile: Profile;
+  city: string;
+  locale: Locale;
+  location?: [number, number];
+}): Promise<AssistantReply> {
+  const res = await fetch(`${API_URL}/api/v1/assistant`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...input, lang: input.locale }),
+  });
+  const body = (await res.json().catch(() => ({}))) as AssistantReply & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+  return body;
+}

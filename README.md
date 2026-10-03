@@ -67,6 +67,12 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - Widżet do osadzenia na stronie hotelu / wydarzenia (`/widget/<id>`, działa bez JavaScriptu).
 - Publiczne API z oceną dopasowania (`/api/v1/places`).
 - Mapa (Leaflet + OSM) jako **dodatek** — te same informacje są w liście i na karcie miejsca.
+- **Asystent AI (Google Gemini)** — zakładka „Asystent” w aplikacji, `POST /api/v1/assistant`. Użytkownik pisze
+  własnymi słowami („jadę wózkiem z przystanku Teatr Bagatela do Sukiennic, potrzebuję toalety”), a model ustala
+  wymagania i wywołuje nasze narzędzia: wyszukiwanie miejsc i przystanków, udogodnienia w pobliżu, szczegóły miejsca
+  ze źródłami, ocenę trasy. **Wszystkie fakty pochodzą z narzędzi** — model nie ma własnej wiedzy o dostępności i ma
+  zakaz traktowania braku danych jako dostępności. Odpowiedź ma przyciski „Pokaż trasę” i „Zastosuj te wymagania”.
+  Klucz `GEMINI_API_KEY` tylko na serwerze; bez klucza asystent jest wyłączony, reszta działa.
 - **Ocena trasy dojścia** (`GET /api/v1/route`, ekran „Trasa dojścia” w aplikacji): od przystanku albo z lokalizacji
   użytkownika do miejsca. Warianty trasy z dwóch publicznych serwisów (OSRM — profil pieszy, Valhalla — tryb wózka)
   są dopasowywane do sieci pieszej OSM (14 676 odcinków centrum Krakowa, 76% z nawierzchnią; 713 krawężników) i
@@ -196,6 +202,9 @@ mobilnej → przed publikacją w sklepach.
 ## Prywatność i bezpieczeństwo
 
 Nie zbieramy informacji o niepełnosprawności ani danych osobowych. Profil i lokalizacja zostają w przeglądarce.
+Asystent AI: treść pytania (i lokalizacja — tylko gdy użytkownik ją włączy) jest wysyłana do Google Gemini w celu
+wygenerowania odpowiedzi; serwer nie zapisuje rozmów, a aplikacja informuje o tym pod polem pytania. W wersji
+produkcyjnej: płatny poziom Gemini API (dane nie są używane do trenowania modeli) albo model uruchamiany lokalnie.
 Zgłoszenia są anonimowe (bez IP w zapisanym rekordzie), walidowane po stronie serwera i limitowane. Tylko HTTPS.
 
 ## Model biznesowy i rozwój

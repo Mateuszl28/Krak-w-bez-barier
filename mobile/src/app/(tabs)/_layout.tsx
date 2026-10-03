@@ -31,6 +31,10 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: s.tabSearch, headerShown: false, tabBarIcon: tab("magnify") }} />
+      <Tabs.Screen
+        name="asystent"
+        options={{ title: s.tabAssistant, headerTitle: s.assistantTitle, tabBarIcon: tab("robot-outline") }}
+      />
       <Tabs.Screen name="mapa" options={{ title: s.tabMap, tabBarIcon: tab("map-outline") }} />
       <Tabs.Screen name="profil" options={{ title: s.tabNeeds, headerTitle: s.needsTitle, tabBarIcon: tab("tune-variant") }} />
       <Tabs.Screen name="zrodla" options={{ title: s.tabInfo, headerTitle: s.infoTitle, tabBarIcon: tab("information-outline") }} />
