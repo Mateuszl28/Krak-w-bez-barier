@@ -44,7 +44,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,
   attribution:'&copy; OpenStreetMap'}).addTo(map);
 function esc(s){return s.replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 var b=[];
-var group=L.markerClusterGroup?L.markerClusterGroup({maxClusterRadius:40,showCoverageOnHover:false}):L.layerGroup();
+var group=(pts.length>1&&L.markerClusterGroup)?L.markerClusterGroup({maxClusterRadius:40,showCoverageOnHover:false}):L.layerGroup();
 group.addTo(map);
 pts.forEach(function(p){
   var icon=L.divIcon({className:'',html:'<div class="pin" style="background:'+p.color+'">'+p.icon+'</div>',iconSize:[30,30],iconAnchor:[15,15]});

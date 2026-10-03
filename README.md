@@ -226,6 +226,12 @@ wygenerowania odpowiedzi; serwer nie zapisuje rozmów, a aplikacja informuje o t
 produkcyjnej: płatny poziom Gemini API (dane nie są używane do trenowania modeli) albo model uruchamiany lokalnie.
 Zgłoszenia są anonimowe (bez IP w zapisanym rekordzie), walidowane po stronie serwera i limitowane. Tylko HTTPS.
 
+Zabezpieczenia w kodzie: Content-Security-Policy (tylko własne zasoby i kafelki OSM; strony nie da się osadzić na
+cudzych witrynach — wyjątek: widżet), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`
+(lokalizacja tylko dla tej strony), limit 300 zapytań/min na publiczne API i osobne limity na zgłoszenia, deklaracje
+i asystenta, walidacja wszystkich danych wejściowych (także identyfikatora miasta — ochrona przed path traversal),
+panel moderacji za hasłem z porównaniem w stałym czasie, klucze API (Gemini) wyłącznie na serwerze.
+
 ## Model biznesowy i rozwój
 
 Bezpłatnie dla mieszkańców i turystów. Przychody: abonament Pro dla obiektów (panel deklaracji, widżet, wiele

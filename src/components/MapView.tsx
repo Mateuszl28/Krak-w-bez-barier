@@ -19,7 +19,7 @@ function escapeHtml(s: string) {
 export default function MapView({ results, height }: { results: Assessed[]; height?: number }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const layer = useRef<L.MarkerClusterGroup | null>(null);
+  const layer = useRef<L.LayerGroup | null>(null);
 
   useEffect(() => {
     if (!el.current || map.current) return;
@@ -28,8 +28,6 @@ export default function MapView({ results, height }: { results: Assessed[]; heig
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map.current);
-    // Grupowanie znaczników: w gęstych miejscach znaczniki nie nachodzą na siebie.
-    layer.current = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }).addTo(map.current);
     return () => {
       map.current?.remove();
       map.current = null;
@@ -37,8 +35,15 @@ export default function MapView({ results, height }: { results: Assessed[]; heig
   }, []);
 
   useEffect(() => {
-    if (!map.current || !layer.current) return;
-    layer.current.clearLayers();
+    if (!map.current) return;
+    layer.current?.remove();
+    // Grupowanie znaczników przy wielu wynikach (w gęstych miejscach nie nachodzą na siebie);
+    // pojedynczy znacznik (karta miejsca) — bez grupowania.
+    const group =
+      results.length > 1
+        ? L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false })
+        : L.layerGroup();
+    layer.current = group.addTo(map.current);
     const bounds: [number, number][] = [];
     for (const { place, assessment } of results) {
       const v = assessment.verdict;
@@ -53,7 +58,7 @@ export default function MapView({ results, height }: { results: Assessed[]; heig
         .bindPopup(
           `<strong>${escapeHtml(place.name)}</strong><br>${VERDICT_TEXT[v].title}<br><a href="/miejsce/${place.id}">Szczegóły i źródła</a>`,
         )
-        .addTo(layer.current);
+        .addTo(group);
       bounds.push([place.lat, place.lon]);
     }
     if (bounds.length > 1) map.current.fitBounds(bounds, { padding: [30, 30], maxZoom: 17 });
