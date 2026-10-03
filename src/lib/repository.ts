@@ -344,7 +344,7 @@ export function mergeDuplicates(byId: Map<string, Place>): number {
     used.add(match.p.id);
     o.facts.push(...match.p.facts);
     o.mergedIds = [...(o.mergedIds ?? []), match.p.id];
-    if (match.p.name !== o.name) o.altNames = [...(o.altNames ?? []), match.p.name];
+    o.altNames = [...new Set([...(o.altNames ?? []), match.p.name, ...(match.p.altNames ?? [])])].filter((n) => n !== o.name);
     byId.set(match.p.id, o);
     merged++;
   }

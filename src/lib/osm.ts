@@ -110,6 +110,11 @@ export function osmToPlace(el: OsmElement): Place | undefined {
   }
 
   const street = [t["addr:street"] ?? t["addr:place"], t["addr:housenumber"]].filter(Boolean).join(" ");
+  // Skróty i inne nazwy ("MOCAK", "Cricoteka") — do wyszukiwania.
+  const altNames = [t.short_name, t.alt_name, t.official_name, t["name:en"]]
+    .flatMap((n) => (n ? n.split(";") : []))
+    .map((n) => n.trim())
+    .filter((n) => n && n !== name);
   return {
     id: `osm-${el.type[0]}${el.id}`,
     name,
@@ -117,6 +122,7 @@ export function osmToPlace(el: OsmElement): Place | undefined {
     lat,
     lon,
     ...(street ? { address: street } : {}),
+    ...(altNames.length ? { altNames: [...new Set(altNames)] } : {}),
     facts,
   };
 }
