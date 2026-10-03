@@ -1,8 +1,9 @@
+import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { assessStop, formatDate, type NearbyStop, type Profile, type Source } from "../lib/shared";
+import { assessStop, formatDate, type NearbyStop, type Place, type Profile, type Source } from "../lib/shared";
 import { useT } from "../lib/strings";
 import { useTheme } from "../lib/theme";
-import { Card, Icon, OUTCOME_MCI, P, VerdictBadge, outcomeColor, type IconName } from "./ui";
+import { Button, Card, Icon, OUTCOME_MCI, P, VerdictBadge, outcomeColor, type IconName } from "./ui";
 
 const MODE_ICON: Record<NearbyStop["mode"], IconName> = { bus: "bus", tram: "tram", bus_tram: "bus-multiple" };
 
@@ -11,10 +12,12 @@ export function StopsList({
   stops,
   profile,
   sources,
+  place,
 }: {
   stops: NearbyStop[];
   profile: Profile;
   sources: Record<string, Source>;
+  place: Place;
 }) {
   const t = useTheme();
   const { s: S, locale } = useT();
@@ -66,6 +69,24 @@ export function StopsList({
               {sources[s.sourceId]?.name ?? s.sourceId}
               {s.observedAt ? ` · ${formatDate(s.observedAt, locale)}` : ""}
             </Text>
+            <Button
+              variant="secondary"
+              icon="walk"
+              label={S.routeFromHere}
+              onPress={() =>
+                router.push({
+                  pathname: "/trasa",
+                  params: {
+                    fromLat: String(s.lat),
+                    fromLon: String(s.lon),
+                    toLat: String(place.lat),
+                    toLon: String(place.lon),
+                    fromName: s.name,
+                    toName: place.name,
+                  },
+                })
+              }
+            />
           </Card>
         );
       })}

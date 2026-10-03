@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "ingest": "node --experimental-strip-types scripts/ingest.ts",
     "ingest:official": "node --experimental-strip-types scripts/ingest-official.ts",
-    "ingest:all": "npm run ingest:official && npm run ingest",
+    "ingest:paths": "node --experimental-strip-types scripts/ingest-paths.ts",
+    "ingest:all": "npm run ingest:official && npm run ingest && npm run ingest:paths",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import type { Category, Fact, NearbyStop, Place, Source, SourceStatus } from "./shared";
+import type { Category, Fact, Locale, NearbyStop, Place, Profile, RequirementResult, Source, SourceStatus, Verdict } from "./shared";
 
 // Backend (Next.js) z importem danych i API. W trybie deweloperskim bierzemy
 // adres komputera, z którego Expo serwuje aplikację; w produkcji — EXPO_PUBLIC_API_URL.
@@ -108,4 +108,47 @@ export async function sendReport(placeId: string, facts: Record<string, unknown>
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) throw new Error(body.error ?? "Nie udało się wysłać zgłoszenia.");
+}
+
+export interface RouteResult {
+  route: {
+    verdict: Verdict;
+    distanceM: number;
+    requirements: RequirementResult[];
+    surfaces: Record<string, number>;
+    steps: { flights: number; count?: number };
+    kerbs: { raised: number; lowered: number; flush: number };
+    maxIncline?: number;
+    coverage: number;
+    segments: { kind: "ok" | "warn" | "barrier" | "unknown"; coords: [number, number][] }[];
+    dataDate: string;
+  };
+  alternatives: number;
+  insideDataArea: boolean;
+  sources: { routing: string; paths: string };
+}
+
+/** Trasa dojścia oceniona pod profil (warianty z kilku serwisów routingu). */
+export async function getRoute(
+  from: [number, number],
+  to: [number, number],
+  profile: Profile,
+  opts: { city?: string; locale?: Locale; awaria?: string },
+): Promise<RouteResult> {
+  const p = new URLSearchParams({
+    from: `${from[0]},${from[1]}`,
+    to: `${to[0]},${to[1]}`,
+    maxStep: String(profile.maxStepCm),
+    minDoor: String(profile.minDoorCm),
+    avoidCobbles: profile.avoidCobbles ? "1" : "0",
+    toilet: profile.needToilet ? "1" : "0",
+    changingTable: profile.needChangingTable ? "1" : "0",
+  });
+  if (opts.city) p.set("city", opts.city);
+  if (opts.locale) p.set("lang", opts.locale);
+  if (opts.awaria) p.set("awaria", opts.awaria);
+  const res = await fetch(`${API_URL}/api/v1/route?${p}`);
+  const body = (await res.json()) as RouteResult & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+  return body;
 }

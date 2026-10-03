@@ -18,5 +18,11 @@
     "owner_declarations",
     "owner_pending",
     "user_reports"
+  ],
+  "pathsBbox": [
+    50.044,
+    19.918,
+    50.072,
+    19.962
   ]
 }

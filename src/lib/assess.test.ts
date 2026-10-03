@@ -114,3 +114,23 @@ test("ocena po angielsku dla turystów", () => {
   assert.equal(a.requirements[0].detail, "Steps at the entrance (height unknown).");
   assert.equal(assess(p, PRESETS.wheelchair_manual, SOURCES, NOW).requirements[0].detail, "Przy wejściu stopnie (wysokość nieznana).");
 });
+
+test("trasa: schody to bariera dla wózka, odcinki bez danych nie są 'bez barier'", async () => {
+  const { PathIndex, assessRoute } = await import("./route.ts");
+  const index = new PathIndex({
+    fetchedAt: "2026-10-01T00:00:00Z",
+    bbox: [50, 19, 50.01, 19.01],
+    ways: [
+      { h: "footway", s: "smooth", g: [[50.001, 19.001], [50.001, 19.003]] },
+      { h: "steps", sc: 12, g: [[50.001, 19.003], [50.001, 19.004]] },
+    ],
+    kerbs: [{ k: "lowered", lat: 50.001, lon: 19.002 }],
+  });
+  const line: [number, number][] = [[50.001, 19.001], [50.001, 19.004], [50.005, 19.004]];
+  const wheel = assessRoute(line, index, PRESETS.wheelchair_manual);
+  assert.equal(wheel.verdict, "barrier");
+  assert.equal(wheel.steps.flights, 1);
+  assert.ok((wheel.surfaces.unknown ?? 0) > 300);
+  const stroller = assessRoute(line, index, PRESETS.stroller);
+  assert.notEqual(stroller.verdict, "barrier");
+});

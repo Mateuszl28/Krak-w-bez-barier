@@ -1,3 +1,4 @@
+import * as Location from "expo-location";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -88,6 +89,22 @@ export default function PlaceScreen() {
     Linking.openURL(url).catch(() =>
       Linking.openURL(`https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lon}#map=19/${place.lat}/${place.lon}`),
     );
+  };
+
+  const routeFromMe = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") return;
+    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    router.push({
+      pathname: "/trasa",
+      params: {
+        fromLat: String(pos.coords.latitude),
+        fromLon: String(pos.coords.longitude),
+        toLat: String(place.lat),
+        toLon: String(place.lon),
+        toName: place.name,
+      },
+    });
   };
 
   const check = async () => {
@@ -200,7 +217,13 @@ export default function PlaceScreen() {
           </Card>
 
           <SectionTitle icon="bus-stop">{S.transitTitle}</SectionTitle>
-          <StopsList stops={loaded.data.stops ?? []} profile={profile} sources={sources} />
+          <Button
+            icon="walk"
+            label={S.routeFromMe}
+            onPress={routeFromMe}
+            style={{ marginBottom: 12 }}
+          />
+          <StopsList stops={loaded.data.stops ?? []} profile={profile} sources={sources} place={place} />
 
           <SectionTitle icon="map-marker-radius">{S.onMap}</SectionTitle>
           <PlacesMap results={[{ place, assessment: a }]} height={220} />

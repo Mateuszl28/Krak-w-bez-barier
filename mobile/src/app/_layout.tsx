@@ -36,6 +36,7 @@ function AppStack() {
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="miejsce/[id]" options={{ title: "" }} />
+            <Stack.Screen name="trasa" options={{ title: s.routeTitle }} />
             <Stack.Screen name="zglos/[id]" options={{ title: s.reportTitle, presentation: "modal" }} />
           </Stack>
   );

@@ -67,6 +67,12 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - Widżet do osadzenia na stronie hotelu / wydarzenia (`/widget/<id>`, działa bez JavaScriptu).
 - Publiczne API z oceną dopasowania (`/api/v1/places`).
 - Mapa (Leaflet + OSM) jako **dodatek** — te same informacje są w liście i na karcie miejsca.
+- **Ocena trasy dojścia** (`GET /api/v1/route`, ekran „Trasa dojścia” w aplikacji): od przystanku albo z lokalizacji
+  użytkownika do miejsca. Warianty trasy z dwóch publicznych serwisów (OSRM — profil pieszy, Valhalla — tryb wózka)
+  są dopasowywane do sieci pieszej OSM (14 676 odcinków centrum Krakowa, 76% z nawierzchnią; 713 krawężników) i
+  oceniane pod profil: schody, krawężniki, nawierzchnia (metry bruku / żwiru / bez danych), nachylenie. Wybieramy
+  wariant z najmniejszą liczbą barier — np. Bulwar Czerwieński → Wawel: zamiast 111 stopni trasa 1287 m bez schodów.
+  Odcinki bez danych liczone osobno i pokazane na mapie przerywaną linią; awaria routingu → komunikat, reszta działa.
 - **Dojazd:** najbliższe przystanki KMK przy każdym miejscu z oceną wsiadania (peron Kassel / zwykły krawężnik /
   wsiadanie z jezdni), nawierzchni peronu i miejsc odpoczynku (wiaty, ławki) — z inwentaryzacji ZTP.
 - PWA: instalacja na telefonie, podstawowe działanie przy słabym zasięgu.
@@ -82,6 +88,9 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 | Otwarte dane Krakowa — ZTP: [Przystanki KMK](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Przystanki_Komunikacji_Miejskiej_w_Krakowie/FeatureServer/0) | 3756 przystanków: krawężnik peronowy (Kassel / zwykły / brak), nawierzchnia peronu, wiaty, ławki | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Deklaracje właścicieli | szczegółowe dane od zarządcy obiektu (zweryfikowane / oczekujące na weryfikację) | formularz `/dla-firm/deklaracja/<id>` / `accessibility.json` | CC BY 4.0 |
 | Zgłoszenia użytkowników | obserwacje odwiedzających | formularz na karcie miejsca | CC BY 4.0 |
+
+| OpenStreetMap — sieć piesza (Overpass API) | chodniki, schody (`highway=steps`, `step_count`), nawierzchnia (`surface`, `footway:surface`), nachylenie (`incline`), krawężniki (`kerb`) | `npm run ingest:paths` | ODbL 1.0 |
+| OSRM (routing.openstreetmap.de) i Valhalla (valhalla1.openstreetmap.de) | geometria tras pieszych / dla wózka | na żądanie | dane ODbL, usługi FOSSGIS — limity uczciwego użycia |
 
 Sprawdzone, ale nieużyte: GTFS ZTP (pola `wheelchair_boarding` / `wheelchair_accessible` są puste), dane.gov.pl
 (brak zbiorów UMK o dostępności).
