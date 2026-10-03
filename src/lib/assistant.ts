@@ -65,6 +65,7 @@ const CATEGORIES: Category[] = [
   "health",
   "shop",
   "attraction",
+  "sport",
   "other",
 ];
 

@@ -52,6 +52,7 @@ export type Category =
   | "health"
   | "shop"
   | "attraction"
+  | "sport"
   | "other";
 
 export interface Place {
@@ -66,6 +67,12 @@ export interface Place {
   sample?: boolean;
   /** Identyfikatory tego samego obiektu w innych źródłach (np. OSM), połączone z tym wpisem. */
   mergedIds?: string[];
+  /** Nazwy tego obiektu w innych źródłach (np. "MOCAK" w OSM) — uwzględniane w wyszukiwaniu. */
+  altNames?: string[];
+  /** Informacje dodatkowe ze źródeł (nie są faktami o barierach — nie wpływają na ocenę). */
+  info?: { text: string; sourceId: string; observedAt?: string }[];
+  /** Odnośniki, np. strona instytucji i BIP z deklaracją dostępności. */
+  links?: { label: string; url: string }[];
 }
 
 export interface SourceStatus {

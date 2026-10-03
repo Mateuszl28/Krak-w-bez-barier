@@ -101,13 +101,19 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 | Otwarte dane Krakowa — ZTP: [Toalety publiczne](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Toalety_publiczne_4/FeatureServer/0) | 50 toalet: dostępność, sposób wjazdu (poziom 0 / platforma / winda / schodołaz), przewijak, godziny | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Otwarte dane Krakowa — ZTP: [Miejsca postojowe OzN](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Miejsca_postojowe_OZN/FeatureServer/0) | 2037 miejsc postojowych; przypisujemy je miejscom w promieniu 150 m | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Otwarte dane Krakowa — ZTP: [Przystanki KMK](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Przystanki_Komunikacji_Miejskiej_w_Krakowie/FeatureServer/0) | 3756 przystanków: krawężnik peronowy (Kassel / zwykły / brak), nawierzchnia peronu, wiaty, ławki | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
+| MSIP Kraków — warstwy Obserwatorium ([Miejskie Instytucje Kultury](https://msip.um.krakow.pl/arcgis/rest/services/Obserwatorium/Miejskie_Instytucje_Kultury/MapServer), [Sporty osób niepełnosprawnych](https://msip.um.krakow.pl/arcgis/rest/services/Obserwatorium/Obiekty_sportowe/MapServer/8)) | 25 miejskich instytucji kultury (lokalizacja, strona, BIP — gdzie publikują ustawowe deklaracje dostępności), obiekt z zajęciami sportowymi dla osób z niepełnosprawnościami; łączone z obiektami OSM (odległość + nazwa) | `npm run ingest:official` | dane publiczne GMK; warunki ponownego wykorzystania nieokreślone w usłudze — podajemy źródło |
 | Deklaracje właścicieli | szczegółowe dane od zarządcy obiektu (zweryfikowane / oczekujące na weryfikację) | formularz `/dla-firm/deklaracja/<id>` / `accessibility.json` | CC BY 4.0 |
 | Zgłoszenia użytkowników | obserwacje odwiedzających | formularz na karcie miejsca | CC BY 4.0 |
 
 | OpenStreetMap — sieć piesza (Overpass API) | chodniki, schody (`highway=steps`, `step_count`), nawierzchnia (`surface`, `footway:surface`), nachylenie (`incline`), krawężniki (`kerb`) | `npm run ingest:paths` | ODbL 1.0 |
 | OSRM (routing.openstreetmap.de) i Valhalla (valhalla1.openstreetmap.de) | geometria tras pieszych / dla wózka | na żądanie | dane ODbL, usługi FOSSGIS — limity uczciwego użycia |
 
-Sprawdzone, ale nieużyte: GTFS ZTP (pola `wheelchair_boarding` / `wheelchair_accessible` są puste), dane.gov.pl
+Sprawdzone, ale nieużyte: pole `DOST_M` w warstwie obiektów sportowych MSIP oznacza „dostępność dla mieszkańców”
+(czy obiekt jest otwarty), a nie dostępność dla osób z niepełnosprawnościami — dlatego go nie używamy. Deklaracji
+dostępności instytucji nie kopiujemy z ich stron (wytyczne: publikacja w internecie nie oznacza zgody na
+automatyczne pobieranie) — podajemy odnośnik do strony instytucji i BIP. Serwer `msip3.um.krakow.pl` (m.in. warstwa
+miejsc postojowych ZDMK i usługi WFS) był niedostępny z naszej sieci; miejsca postojowe OzN bierzemy z inwentaryzacji ZTP.
+Pozostałe sprawdzone i nieużyte: GTFS ZTP (pola `wheelchair_boarding` / `wheelchair_accessible` są puste), dane.gov.pl
 (brak zbiorów UMK o dostępności).
 
 **Aktualność i wiarygodność.** Data przy informacji to: `check_date` lub data ostatniej edycji obiektu (OSM), data

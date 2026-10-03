@@ -296,30 +296,55 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
   return { config, places, byId, stops, status };
 }
 
-const MERGE_RADIUS_M = 25;
-const MERGE_CATEGORIES = new Set<Category>(["toilet"]);
+// Reguły łączenia: toalety po samej odległości (w danych miasta i OSM to te same budki),
+// instytucje i obiekty sportowe — odległość + wspólne charakterystyczne słowo w nazwie.
+const MERGE_RULES: Partial<Record<Category, { radiusM: number; byName: boolean; osmCategories: Category[] }>> = {
+  toilet: { radiusM: 25, byName: false, osmCategories: ["toilet"] },
+  culture: { radiusM: 100, byName: true, osmCategories: ["culture", "attraction", "other"] },
+  sport: { radiusM: 150, byName: true, osmCategories: ["other", "attraction", "culture"] },
+};
+
+const GENERIC_WORDS = new Set([
+  "muzeum", "teatr", "centrum", "kultury", "kultura", "galeria", "krakow", "krakowskie", "krakowski", "krakowska",
+  "orkiestra", "instytut", "osrodek", "zespol", "sztuki", "biblioteka", "miasta", "historyczne", "scena", "hala",
+]);
+
+function nameTokens(name: string): string[] {
+  return normalize(name)
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 4 && !GENERIC_WORDS.has(t));
+}
+
+function similarNames(a: string, b: string): boolean {
+  const tb = nameTokens(b);
+  return nameTokens(a).some((x) => tb.some((y) => x.slice(0, 5) === y.slice(0, 5)));
+}
 
 /**
- * Łączy obiekty z danych miejskich z odpowiadającymi im obiektami OSM (ta sama
- * kategoria, do 25 m). Obiekt miejski przejmuje fakty z OSM; identyfikator OSM
- * nadal wskazuje na połączony obiekt, więc stare linki działają.
+ * Łączy obiekty z danych miejskich (krk-…) z odpowiadającymi im obiektami OSM.
+ * Obiekt miejski przejmuje fakty z OSM; identyfikator OSM nadal wskazuje na
+ * połączony obiekt, więc stare linki działają.
  */
 export function mergeDuplicates(byId: Map<string, Place>): number {
   const all = [...byId.values()];
-  const official = all.filter((p) => p.id.startsWith("krk-") && MERGE_CATEGORIES.has(p.category));
-  const osm = all.filter((p) => p.id.startsWith("osm-") && MERGE_CATEGORIES.has(p.category));
+  const osm = all.filter((p) => p.id.startsWith("osm-"));
   const used = new Set<string>();
   let merged = 0;
-  for (const o of official) {
+  for (const o of all.filter((p) => p.id.startsWith("krk-"))) {
+    const rule = MERGE_RULES[o.category];
+    if (!rule) continue;
     const match = osm
-      .filter((p) => !used.has(p.id) && p.category === o.category)
+      .filter((p) => !used.has(p.id) && rule.osmCategories.includes(p.category))
+      .filter((p) => !rule.byName || similarNames(o.name, p.name))
       .map((p) => ({ p, d: distanceM([o.lat, o.lon], [p.lat, p.lon]) }))
-      .filter((x) => x.d <= MERGE_RADIUS_M)
+      .filter((x) => x.d <= rule.radiusM)
       .sort((a, b) => a.d - b.d)[0];
     if (!match) continue;
     used.add(match.p.id);
     o.facts.push(...match.p.facts);
     o.mergedIds = [...(o.mergedIds ?? []), match.p.id];
+    if (match.p.name !== o.name) o.altNames = [...(o.altNames ?? []), match.p.name];
     byId.set(match.p.id, o);
     merged++;
   }
@@ -344,7 +369,7 @@ export function distanceM(a: [number, number], b: [number, number]): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-const BROWSE_ORDER: Category[] = ["attraction", "culture", "accommodation", "food", "toilet", "office", "health", "transport", "shop"];
+const BROWSE_ORDER: Category[] = ["attraction", "culture", "sport", "accommodation", "food", "toilet", "office", "health", "transport", "shop"];
 
 export interface SearchOptions {
   q?: string;
@@ -359,7 +384,10 @@ export function search(places: Place[], opts: SearchOptions): Place[] {
   let result = places.filter(
     (p) =>
       (!opts.category || p.category === opts.category) &&
-      (!q || normalize(p.name).includes(q) || (p.address && normalize(p.address).includes(q))),
+      (!q ||
+        normalize(p.name).includes(q) ||
+        (p.address && normalize(p.address).includes(q)) ||
+        p.altNames?.some((n) => normalize(n).includes(q))),
   );
   result = result.sort((a, b) => {
     if (q) {
@@ -367,6 +395,10 @@ export function search(places: Place[], opts: SearchOptions): Place[] {
       const sa = normalize(a.name).startsWith(q) ? 0 : 1;
       const sb = normalize(b.name).startsWith(q) ? 0 : 1;
       if (sa !== sb) return sa - sb;
+      // Przy tej samej trafności: miejsca docelowe przed peronami przystanków i "innymi".
+      const ra = BROWSE_ORDER.indexOf(a.category), rb = BROWSE_ORDER.indexOf(b.category);
+      const ca = ra === -1 ? BROWSE_ORDER.length : ra, cb = rb === -1 ? BROWSE_ORDER.length : rb;
+      if (ca !== cb && !near) return ca - cb;
     }
     if (near) return distanceM(near, [a.lat, a.lon]) - distanceM(near, [b.lat, b.lon]);
     // Bez zapytania: najpierw to, po co ludzie przyjeżdżają (atrakcje, kultura), potem reszta.

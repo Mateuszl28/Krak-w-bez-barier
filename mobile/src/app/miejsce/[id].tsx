@@ -191,6 +191,37 @@ export default function PlaceScreen() {
             </Banner>
           )}
 
+          {(place.info?.length || place.links?.length) && (
+            <Card style={{ gap: 8, marginBottom: 4 }}>
+              <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                <Icon name="city-variant-outline" size={22} color={t.accent} />
+                <Text accessibilityRole="header" style={{ color: t.text, fontWeight: "800", fontSize: 16, flex: 1 }}>
+                  {S.cityInfoTitle}
+                </Text>
+              </View>
+              {place.info?.map((i, k) => (
+                <Text key={k} style={{ color: t.text, fontSize: 15 }}>
+                  {i.text}{" "}
+                  <Text style={{ color: t.muted, fontSize: 13 }}>
+                    ({sources[i.sourceId]?.name ?? i.sourceId}
+                    {i.observedAt ? `, ${formatDate(i.observedAt, locale)}` : ""})
+                  </Text>
+                </Text>
+              ))}
+              {place.links?.map((l) => (
+                <Text
+                  key={l.url}
+                  accessibilityRole="link"
+                  onPress={() => Linking.openURL(l.url)}
+                  style={{ color: t.accent, fontWeight: "700", fontSize: 15, paddingVertical: 8 }}
+                >
+                  {l.label} →
+                </Text>
+              ))}
+              <Text style={{ color: t.muted, fontSize: 13 }}>{S.cityInfoNote}</Text>
+            </Card>
+          )}
+
           <SectionTitle icon="clipboard-check-outline">{S.yourRequirements}</SectionTitle>
           <Card style={{ paddingVertical: 4 }}>
             {a.requirements.map((r, i) => {

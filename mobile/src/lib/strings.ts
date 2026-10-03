@@ -185,6 +185,8 @@ const pl = {
   ],
   you: "Ty",
   assistantName: "Asystent",
+  cityInfoTitle: "Informacje z danych miejskich",
+  cityInfoNote: "Te informacje nie zmieniają oceny — nie opisują konkretnych barier ani udogodnień.",
   // ulubione
   save: "Zapisz miejsce",
   saved: "Zapisane",
@@ -387,6 +389,8 @@ const en: Strings = {
   ],
   you: "You",
   assistantName: "Assistant",
+  cityInfoTitle: "Information from city data",
+  cityInfoNote: "This information does not change the rating — it doesn't describe specific barriers or facilities.",
   save: "Save place",
   saved: "Saved",
   yourPlaces: "Your places",

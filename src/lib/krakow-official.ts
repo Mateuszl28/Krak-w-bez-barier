@@ -151,3 +151,97 @@ export function stopToTransit(f: Feature<StopProps>): TransitStop | undefined {
     observedAt: p.EditDate ? new Date(p.EditDate).toISOString().slice(0, 10) : "",
   };
 }
+
+// --- MSIP (Miejski System Informacji Przestrzennej) ---------------------------
+
+const MSIP = "https://msip.um.krakow.pl/arcgis/rest/services/Obserwatorium";
+export const CULTURE_LAYERS = [0, 1, 2, 3, 4].map((l) => `${MSIP}/Miejskie_Instytucje_Kultury/MapServer/${l}/query`);
+export const DISABLED_SPORTS_URL = `${MSIP}/Obiekty_sportowe/MapServer/8/query`;
+
+interface CultureProps {
+  objectid: number;
+  nazwa: string;
+  adres?: string;
+  strona_www?: string;
+  bip?: string;
+}
+
+interface SportProps {
+  NAZWA: string;
+  ADRES?: string;
+  DYSCYPLINA?: string;
+}
+
+const DECLARATION_DUTY =
+  "Miejska instytucja kultury — jako podmiot publiczny ma obowiązek publikować deklarację dostępności (ustawa z 19 lipca 2019 r. o zapewnianiu dostępności osobom ze szczególnymi potrzebami). Treść deklaracji znajdziesz na stronie instytucji lub w BIP.";
+
+export function cultureToPlace(f: Feature<CultureProps>, layer: number, fetchedAt: string): Place | undefined {
+  if (!f.geometry) return undefined;
+  const p = f.properties;
+  const [lon, lat] = f.geometry.coordinates;
+  const links = [
+    p.strona_www ? { label: "Strona instytucji", url: p.strona_www.trim() } : undefined,
+    p.bip ? { label: "BIP (m.in. deklaracja dostępności)", url: p.bip.trim() } : undefined,
+  ].filter((x): x is { label: string; url: string } => !!x);
+  return {
+    id: `krk-ik-${layer}-${p.objectid}`,
+    name: p.nazwa.trim(),
+    category: "culture",
+    lat,
+    lon,
+    ...(p.adres ? { address: p.adres.replace(/\s+/g, " ").trim() } : {}),
+    facts: [],
+    info: [{ text: DECLARATION_DUTY, sourceId: "msip", observedAt: fetchedAt }],
+    links,
+  };
+}
+
+/** Obiekty z zajęciami dla osób z niepełnosprawnościami — jeden wpis na obiekt, lista dyscyplin. */
+export function disabledSportsToPlaces(features: Feature<SportProps>[], fetchedAt: string): Place[] {
+  const byName = new Map<string, { f: Feature<SportProps>; disciplines: string[] }>();
+  for (const f of features) {
+    if (!f.geometry) continue;
+    const entry = byName.get(f.properties.NAZWA) ?? { f, disciplines: [] };
+    if (f.properties.DYSCYPLINA) entry.disciplines.push(f.properties.DYSCYPLINA.trim());
+    byName.set(f.properties.NAZWA, entry);
+  }
+  return [...byName.values()].map(({ f, disciplines }, i) => {
+    const [lon, lat] = f.geometry!.coordinates;
+    return {
+      id: `krk-sport-${i + 1}`,
+      name: f.properties.NAZWA.trim(),
+      category: "sport" as const,
+      lat,
+      lon,
+      ...(f.properties.ADRES ? { address: f.properties.ADRES.trim() } : {}),
+      facts: [],
+      info: [
+        {
+          text: `Obiekt z zajęciami sportowymi dla osób z niepełnosprawnościami (dane miejskie): ${disciplines.join(", ")}.`,
+          sourceId: "msip",
+          observedAt: fetchedAt,
+        },
+      ],
+    };
+  });
+}
+
+/** Warstwy MSIP bez obsługi GeoJSON: natywny JSON ArcGIS (punkt lub multipunkt) → Feature. */
+export async function fetchArcgisJson<P>(url: string): Promise<Feature<P>[]> {
+  const params = new URLSearchParams({ where: "1=1", outFields: "*", outSR: "4326", f: "json" });
+  const res = await fetch(`${url}?${params}`, { signal: AbortSignal.timeout(60_000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = (await res.json()) as {
+    error?: { message: string };
+    features?: { attributes: P; geometry?: { x?: number; y?: number; points?: [number, number][] } }[];
+  };
+  if (json.error || !json.features) throw new Error(json.error?.message ?? "brak features");
+  return json.features.map((f) => {
+    const g = f.geometry;
+    const coords = g?.points?.[0] ?? (g?.x !== undefined && g?.y !== undefined ? [g.x, g.y] : undefined);
+    return {
+      properties: f.attributes,
+      geometry: coords ? { type: "Point" as const, coordinates: coords as [number, number] } : null,
+    };
+  });
+}

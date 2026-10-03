@@ -67,6 +67,7 @@ export const LABELS: Record<Locale, Labels> = {
       health: "Zdrowie",
       shop: "Sklep",
       attraction: "Atrakcja",
+      sport: "Sport",
       other: "Inne",
     },
     sourceKind: {
@@ -122,6 +123,7 @@ export const LABELS: Record<Locale, Labels> = {
       health: "Health",
       shop: "Shop",
       attraction: "Attraction",
+      sport: "Sport",
       other: "Other",
     },
     sourceKind: {

@@ -76,6 +76,37 @@ export function PlaceDetail({
         </div>
       </section>
 
+      {(place.info?.length || place.links?.length) && (
+        <section aria-labelledby="info-h" className="card" style={{ marginBottom: 8 }}>
+          <h2 id="info-h" style={{ marginTop: 0, fontSize: "1.1rem" }}>
+            Informacje z danych miejskich
+          </h2>
+          {place.info?.map((i, k) => (
+            <p key={k}>
+              {i.text}{" "}
+              <span style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+                (źródło: {sources[i.sourceId]?.name ?? i.sourceId}
+                {i.observedAt ? `, ${formatDate(i.observedAt)}` : ""})
+              </span>
+            </p>
+          ))}
+          {place.links?.length ? (
+            <ul>
+              {place.links.map((l) => (
+                <li key={l.url}>
+                  <a href={l.url} rel="noopener noreferrer">
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="lead" style={{ margin: 0, fontSize: "0.9rem" }}>
+            Te informacje nie zmieniają oceny — nie opisują konkretnych barier ani udogodnień.
+          </p>
+        </section>
+      )}
+
       <h2>Twoje wymagania</h2>
       <ul className="reqs">
         {a.requirements.map((r) => (

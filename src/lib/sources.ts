@@ -23,6 +23,16 @@ export const SOURCES: Record<string, Source> = {
     description:
       "Toalety publiczne (dostępność, sposób wjazdu, przewijak), inwentaryzacja miejsc postojowych dla osób z niepełnosprawnościami oraz przystanków (perony, wiaty, ławki).",
   },
+  msip: {
+    id: "msip",
+    name: "Miejski System Informacji Przestrzennej Krakowa (MSIP)",
+    kind: "official",
+    url: "https://msip.krakow.pl/",
+    license: "Dane publiczne Gminy Miejskiej Kraków — warunki ponownego wykorzystania nie są określone w usłudze; podajemy źródło",
+    updateFrequency: "Import codziennie z usług ArcGIS MSIP (warstwy Obserwatorium)",
+    description:
+      "Miejskie instytucje kultury (lokalizacja, strona, BIP) oraz obiekty sportowe dla osób z niepełnosprawnościami.",
+  },
   owner_declarations: {
     id: "owner_declarations",
     name: "Deklaracje właścicieli obiektów",

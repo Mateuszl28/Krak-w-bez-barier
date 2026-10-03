@@ -34,6 +34,7 @@ export const CATEGORY_ICON: Record<Category, IconName> = {
   health: "hospital-box",
   shop: "shopping",
   attraction: "camera",
+  sport: "basketball",
   other: "map-marker",
 };
 

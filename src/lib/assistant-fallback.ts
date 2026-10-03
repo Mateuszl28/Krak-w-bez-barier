@@ -41,6 +41,7 @@ const CATEGORY_RANK: Category[] = [
   "culture",
   "transport",
   "office",
+  "sport",
   "health",
   "accommodation",
   "toilet",
