@@ -14,7 +14,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <span className="brand-mark" aria-hidden="true">
               ♿
             </span>
-            Kraków bez barier
+            Dostępnik
           </Link>
           <Nav />
         </div>

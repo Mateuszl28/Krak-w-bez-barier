@@ -76,7 +76,7 @@ export default async function Widget({ params }: { params: Promise<{ id: string 
           </a>
         </p>
         <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginTop: 8, marginBottom: 0 }}>
-          Kraków bez barier · informacje z wielu źródeł, nie stanowią formalnego zapewnienia dostępności.
+          Dostępnik · informacje z wielu źródeł, nie stanowią formalnego zapewnienia dostępności.
         </p>
       </section>
     </main>

@@ -14,7 +14,7 @@ export async function overpass<T>(query: string, timeoutMs = 200_000): Promise<{
         headers: {
           "content-type": "application/x-www-form-urlencoded",
           accept: "application/json",
-          "user-agent": "krakow-bez-barier/0.1 (hackathon prototype)",
+          "user-agent": "dostepnik/0.1 (hackathon prototype)",
         },
         body: new URLSearchParams({ data: query }),
         signal: AbortSignal.timeout(timeoutMs),

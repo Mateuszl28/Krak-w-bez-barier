@@ -15,7 +15,7 @@ const pl = {
   reportTitle: "Zgłoś poprawkę",
   back: "Wróć",
   // ekran główny
-  brand: "Bez barier",
+  brand: "Dostępnik",
   cityLabel: (c: string) => `Miasto: ${c}. Zmień miasto`,
   pickCity: "Wybierz miasto",
   heroTitle: "Dokąd się wybierasz?",
@@ -227,7 +227,7 @@ const en: Strings = {
   infoTitle: "Sources & method",
   reportTitle: "Report a correction",
   back: "Back",
-  brand: "Barrier-free",
+  brand: "Dostępnik",
   cityLabel: (c) => `City: ${c}. Change city`,
   pickCity: "Choose a city",
   heroTitle: "Where are you going?",

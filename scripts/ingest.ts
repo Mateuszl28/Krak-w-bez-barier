@@ -38,7 +38,7 @@ async function fetchFrom(url: string): Promise<OsmElement[]> {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
-      "user-agent": "krakow-bez-barier/0.1 (hackathon prototype)",
+      "user-agent": "dostepnik/0.1 (hackathon prototype)",
     },
     body: new URLSearchParams({ data: query }),
     signal: AbortSignal.timeout(200_000),

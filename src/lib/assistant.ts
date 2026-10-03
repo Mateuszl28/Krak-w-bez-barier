@@ -160,7 +160,7 @@ const DECLARATIONS: FunctionDeclaration[] = [
 function systemInstruction(req: AssistantRequest, cityName: string): string {
   const lang = req.locale === "en" ? "English" : "Polish";
   return [
-    `You are the trip assistant of "Kraków bez barier" for ${cityName}. You help wheelchair users and parents with strollers check whether a place or a walking route fits their needs.`,
+    `You are the trip assistant of "Dostępnik" for ${cityName}. You help wheelchair users and parents with strollers check whether a place or a walking route fits their needs.`,
     `Answer in ${lang}, briefly and concretely (max ~120 words), in plain text: no Markdown (no **, #, tables); use "•" for lists.`,
     "Rules:",
     "- Every fact must come from a tool result in this conversation. Do not add anything from your own knowledge: no street names, route descriptions, landmarks, opening hours, prices or physical details that the tools did not return.",

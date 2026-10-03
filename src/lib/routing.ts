@@ -9,7 +9,7 @@ import { PathIndex, assessRoute, decodePolyline6, routeScore, type RouteAssessme
 // OSRM (profil pieszy) i Valhalla (tryb wózka, omija schody) — publiczne instancje FOSSGIS.
 const OSRM = "https://routing.openstreetmap.de/routed-foot/route/v1/driving";
 const VALHALLA = "https://valhalla1.openstreetmap.de/route";
-const UA = { "user-agent": "krakow-bez-barier/0.1 (hackathon prototype)" };
+const UA = { "user-agent": "dostepnik/0.1 (hackathon prototype)" };
 
 type LatLon = [number, number];
 

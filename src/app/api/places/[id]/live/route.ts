@@ -20,7 +20,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (simulateOutage) throw new Error("symulacja awarii");
     const type = TYPES[m[1]];
     const res = await fetch(`https://api.openstreetmap.org/api/0.6/${type}/${m[2]}.json`, {
-      headers: { "user-agent": "krakow-bez-barier/0.1 (hackathon prototype)" },
+      headers: { "user-agent": "dostepnik/0.1 (hackathon prototype)" },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

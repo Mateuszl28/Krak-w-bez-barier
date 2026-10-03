@@ -1,4 +1,4 @@
-# Kraków bez barier
+# Dostępnik
 
 Narzędzie, które pozwala sprawdzić, czy miejsce w Krakowie odpowiada **Twoim** potrzebom — zamiast etykiety
 „dostępne / niedostępne” pokazuje konkretne bariery i udogodnienia (wejście, próg, szerokość drzwi, winda, toaleta,

@@ -3,11 +3,11 @@ import { RegisterSW } from "@/components/RegisterSW";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Kraków bez barier", template: "%s · Kraków bez barier" },
+  title: { default: "Dostępnik", template: "%s · Dostępnik" },
   description:
     "Sprawdź, czy miejsce w Krakowie odpowiada Twoim potrzebom: schody, progi, szerokość drzwi, toalety — ze źródłem i datą każdej informacji.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Bez barier", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Dostępnik", statusBarStyle: "default" },
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
 };
 
