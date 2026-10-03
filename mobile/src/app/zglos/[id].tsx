@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button, Chip, P } from "../../components/ui";
 import { sendReport } from "../../lib/api";
 import { useProfile } from "../../lib/profile";
+import { useT } from "../../lib/strings";
 import { useTheme } from "../../lib/theme";
 
 // Zgłoszenie korekty. Trafia na kartę jako niezweryfikowane. Bez danych osobowych.
@@ -13,6 +14,7 @@ export default function ReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const { city } = useProfile();
+  const { s: S } = useT();
   const [entrance, setEntrance] = useState("");
   const [steps, setSteps] = useState("");
   const [height, setHeight] = useState("");
@@ -59,8 +61,8 @@ export default function ReportScreen() {
 
   const yesNo = (label: string, value: Tri, set: (v: Tri) => void) =>
     choice(label, value, (v) => set(v as Tri), [
-      ["yes", "jest"],
-      ["no", "nie ma"],
+      ["yes", S.yesThere],
+      ["no", S.noThere],
     ]);
 
   const num = (label: string, value: string, set: (v: string) => void) => (
@@ -81,31 +83,21 @@ export default function ReportScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 48, gap: 16 }}
       keyboardShouldPersistTaps="handled"
     >
-      <P>Uzupełnij to, co wiesz — wystarczy jedno pole. Zgłoszenie pojawi się na karcie jako niezweryfikowane.</P>
-      {choice("Wejście", entrance, setEntrance, [
-        ["level", "bez stopni"],
-        ["ramp", "podjazd"],
-        ["lift", "platforma / winda"],
-        ["steps", "stopnie"],
-      ])}
+      <P>{S.reportIntro}</P>
+      {choice(S.entrance, entrance, setEntrance, S.entranceOptions)}
       <View style={styles.wrap}>
-        {num("Liczba stopni", steps, setSteps)}
-        {num("Najwyższy próg (cm)", height, setHeight)}
-        {num("Szerokość drzwi (cm)", door, setDoor)}
+        {num(S.stepCount, steps, setSteps)}
+        {num(S.stepHeight, height, setHeight)}
+        {num(S.doorWidth, door, setDoor)}
       </View>
-      {yesNo("Toaleta dostępna dla wózka", toilet, setToilet)}
-      {yesNo("Przewijak", changing, setChanging)}
-      {yesNo("Winda na inne piętra", elevator, setElevator)}
-      {choice("Nawierzchnia dojścia", surface, setSurface, [
-        ["smooth", "gładka"],
-        ["paving", "kostka"],
-        ["cobblestone", "bruk"],
-        ["gravel", "żwir"],
-      ])}
+      {yesNo(S.toilet, toilet, setToilet)}
+      {yesNo(S.changing, changing, setChanging)}
+      {yesNo(S.elevator, elevator, setElevator)}
+      {choice(S.surface, surface, setSurface, S.surfaceOptions)}
       <View style={{ gap: 6 }}>
-        <Text style={[styles.label, { color: t.text }]}>Uwagi (opcjonalnie)</Text>
+        <Text style={[styles.label, { color: t.text }]}>{S.comments}</Text>
         <TextInput
-          accessibilityLabel="Uwagi"
+          accessibilityLabel={S.commentsLabel}
           multiline
           maxLength={500}
           value={comment}
@@ -123,7 +115,7 @@ export default function ReportScreen() {
           ]}
         />
       </View>
-      <Button label={busy ? "Wysyłanie…" : "Wyślij zgłoszenie"} disabled={busy} onPress={submit} />
+      <Button label={busy ? S.sending : S.send} disabled={busy} onPress={submit} />
       {msg ? (
         <Text accessibilityLiveRegion="assertive" style={{ color: t.bad, fontWeight: "700", fontSize: 16 }}>
           {msg}

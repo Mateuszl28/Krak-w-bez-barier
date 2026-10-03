@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { useProfile } from "../lib/profile";
-import { PRESETS, PRESET_LABELS } from "../lib/shared";
+import { PRESETS } from "../lib/shared";
+import { useT } from "../lib/strings";
 import { useTheme } from "../lib/theme";
 import { Icon, PRESET_ICON, shadow } from "./ui";
 
@@ -8,8 +9,9 @@ import { Icon, PRESET_ICON, shadow } from "./ui";
 export function ProfileTiles({ onDark = false }: { onDark?: boolean }) {
   const t = useTheme();
   const { profile, setProfile } = useProfile();
+  const { s, L } = useT();
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Czym się poruszasz?" style={{ flexDirection: "row", gap: 10 }}>
+    <View accessibilityRole="radiogroup" accessibilityLabel={s.howYouMove} style={{ flexDirection: "row", gap: 10 }}>
       {(Object.keys(PRESETS) as (keyof typeof PRESETS)[]).map((key) => {
         const selected = profile.preset === key;
         return (
@@ -17,7 +19,7 @@ export function ProfileTiles({ onDark = false }: { onDark?: boolean }) {
             key={key}
             accessibilityRole="radio"
             accessibilityState={{ checked: selected }}
-            accessibilityLabel={PRESET_LABELS[key]}
+            accessibilityLabel={L.preset[key]}
             onPress={() => setProfile(PRESETS[key])}
             style={[
               {
@@ -49,7 +51,7 @@ export function ProfileTiles({ onDark = false }: { onDark?: boolean }) {
                 color: selected ? (onDark ? t.hero : t.text) : onDark ? "#ffffff" : t.text,
               }}
             >
-              {PRESET_LABELS[key]}
+              {L.preset[key]}
             </Text>
           </Pressable>
         );

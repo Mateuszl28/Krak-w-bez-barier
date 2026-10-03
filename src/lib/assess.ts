@@ -3,6 +3,7 @@
 // pokazujemy obok siebie zamiast wybierać jedną wersję.
 
 import type { Fact, FactValue, FeatureKey, Place, Profile, Source, TransitStop } from "./model.ts";
+import { MESSAGES, type Locale, type Messages } from "./i18n.ts";
 import { formatValue } from "./labels.ts";
 
 /** Dane starsze niż 2 lata oznaczamy jako potencjalnie nieaktualne. */
@@ -111,10 +112,12 @@ const GENERAL_YES_DOOR_CM = 80;
 function entranceRequirement(
   v: Partial<Record<FeatureKey, FeatureView>>,
   p: Profile,
+  m: Messages,
+  locale: Locale,
 ): RequirementResult {
   const base = {
     id: "entrance",
-    label: p.maxStepCm > 0 ? `Wejście z progiem najwyżej ${p.maxStepCm} cm` : "Wejście bez progów",
+    label: m.entranceLabel(p.maxStepCm),
     keys: ["entrance", "step_count", "step_height_cm", "general"] as FeatureKey[],
   };
   const entrance = v.entrance;
@@ -124,65 +127,61 @@ function entranceRequirement(
 
   const detailed = [entrance, count, height].filter((x) => x && x.status !== "missing");
   if (detailed.some((x) => x!.status === "conflict")) {
-    return { ...base, outcome: "conflict", detail: "Źródła podają sprzeczne informacje o wejściu." };
+    return { ...base, outcome: "conflict", detail: m.entranceConflict };
   }
 
   const h = typeof height?.value === "number" ? height.value : undefined;
   const n = typeof count?.value === "number" ? count.value : undefined;
   if (entrance?.value === "level" && n !== undefined && n > 0) {
-    return { ...base, outcome: "conflict", detail: "Jedno źródło podaje wejście bez stopni, inne — stopnie." };
+    return { ...base, outcome: "conflict", detail: m.levelVsSteps };
   }
   if (h !== undefined && h > p.maxStepCm) {
-    return { ...base, outcome: "barrier", detail: `Próg lub stopień ma ${h} cm.` };
+    return { ...base, outcome: "barrier", detail: m.stepTooHigh(h) };
   }
   if (entrance?.value === "level" || entrance?.value === "ramp" || entrance?.value === "lift" || n === 0) {
     const how =
-      entrance?.value === "ramp"
-        ? "Wejście przez podjazd"
-        : entrance?.value === "lift"
-          ? "Wjazd przez platformę lub windę (może wymagać obsługi)"
-          : "Wejście bez stopni";
-    return { ...base, outcome: "ok", detail: h !== undefined ? `${how}, próg ${h} cm.` : `${how}.` };
+      entrance?.value === "ramp" ? m.viaRamp : entrance?.value === "lift" ? m.viaLift : m.stepFree;
+    return { ...base, outcome: "ok", detail: h !== undefined ? m.withThreshold(how, h) : m.plain(how) };
   }
   if (entrance?.value === "steps" || (n !== undefined && n > 0)) {
-    const steps = n !== undefined ? `${n} ${n === 1 ? "stopień" : "stopnie"}` : "stopnie";
+    const steps = m.steps(n);
     if (h !== undefined) {
       return n !== undefined && n > 1
-        ? { ...base, outcome: "barrier", detail: `Przy wejściu ${steps} po ${h} cm.` }
-        : { ...base, outcome: "ok", detail: `Przy wejściu ${steps} o wysokości ${h} cm.` };
+        ? { ...base, outcome: "barrier", detail: m.stepsEach(steps, h) }
+        : { ...base, outcome: "ok", detail: m.stepsHigh(steps, h) };
     }
     // Wysokość nieznana: typowy stopień to ok. 15 cm. Dla wózka inwalidzkiego to
     // przeszkoda niezależnie od dokładnej wartości, dla wózka dziecięcego — nie wiadomo.
     return p.maxStepCm < TYPICAL_STEP_CM
-      ? { ...base, outcome: "barrier", detail: `Przy wejściu ${steps} (wysokość nieznana).` }
-      : { ...base, outcome: "unknown", detail: `Przy wejściu ${steps}, brak informacji o wysokości.` };
+      ? { ...base, outcome: "barrier", detail: m.stepsUnknownHeightBarrier(steps) }
+      : { ...base, outcome: "unknown", detail: m.stepsUnknownHeight(steps) };
   }
   if (h !== undefined) {
-    return { ...base, outcome: "ok", detail: `Próg ${h} cm.` };
+    return { ...base, outcome: "ok", detail: m.threshold(h) };
   }
 
   if (general && general.status !== "missing") {
     if (general.status === "conflict") {
-      return { ...base, outcome: "conflict", detail: "Źródła różnie oceniają dostępność miejsca." };
+      return { ...base, outcome: "conflict", detail: m.generalConflict };
     }
     if (general.value === "yes") {
       return {
         ...base,
         outcome: "ok",
         generalOnly: true,
-        detail: "Źródło ocenia miejsce jako dostępne dla wózka, bez szczegółów o wejściu.",
+        detail: m.generalYes,
       };
     }
     if (general.value === "no" && p.maxStepCm < TYPICAL_STEP_CM) {
-      return { ...base, outcome: "barrier", detail: "Źródło ocenia miejsce jako niedostępne dla wózka." };
+      return { ...base, outcome: "barrier", detail: m.generalNo };
     }
     return {
       ...base,
       outcome: "unknown",
-      detail: `Źródło podaje tylko ogólną ocenę: ${formatValue("general", general.value!)}.`,
+      detail: m.generalOnly(formatValue("general", general.value!, locale)),
     };
   }
-  return { ...base, outcome: "unknown", detail: "Brak informacji o wejściu." };
+  return { ...base, outcome: "unknown", detail: m.noEntranceInfo };
 }
 
 function thresholdRequirement(
@@ -191,10 +190,11 @@ function thresholdRequirement(
   test: (value: FactValue) => boolean,
   describe: (value: FactValue) => string,
   missing: string,
+  conflict: string,
 ): RequirementResult {
   if (!view || view.status === "missing") return { ...base, outcome: "unknown", detail: missing };
   if (view.status === "conflict") {
-    return { ...base, outcome: "conflict", detail: "Źródła podają sprzeczne informacje." };
+    return { ...base, outcome: "conflict", detail: conflict };
   }
   return { ...base, outcome: test(view.value!) ? "ok" : "barrier", detail: describe(view.value!) };
 }
@@ -204,12 +204,14 @@ export function assess(
   profile: Profile,
   sources: Record<string, Source>,
   now = new Date(),
+  locale: Locale = "pl",
 ): Assessment {
+  const m = MESSAGES[locale];
   const features: Partial<Record<FeatureKey, FeatureView>> = {};
   const keys = new Set(place.facts.map((f) => f.key));
   for (const key of keys) features[key] = viewFeature(key, place.facts, sources, now);
 
-  const requirements: RequirementResult[] = [entranceRequirement(features, profile)];
+  const requirements: RequirementResult[] = [entranceRequirement(features, profile, m, locale)];
 
   const door = features.door_width_cm;
   const generalYes = features.general?.status !== "conflict" && features.general?.value === "yes";
@@ -219,22 +221,21 @@ export function assess(
     const standard = profile.minDoorCm <= GENERAL_YES_DOOR_CM;
     requirements.push({
       id: "door",
-      label: `Przejście szerokie na co najmniej ${profile.minDoorCm} cm`,
+      label: m.doorLabel(profile.minDoorCm),
       keys: ["door_width_cm", "general"],
       outcome: standard ? "ok" : "unknown",
       generalOnly: true,
-      detail: standard
-        ? "Brak pomiaru; ogólna ocena „dostępne” obejmuje drzwi przejezdne dla standardowego wózka."
-        : "Brak pomiaru szerokości drzwi (jest tylko ogólna ocena dostępności).",
+      detail: standard ? m.doorGeneralOk : m.doorGeneralUnknown,
     });
   } else {
     requirements.push(
       thresholdRequirement(
         door,
-        { id: "door", label: `Przejście szerokie na co najmniej ${profile.minDoorCm} cm`, keys: ["door_width_cm"] },
+        { id: "door", label: m.doorLabel(profile.minDoorCm), keys: ["door_width_cm"] },
         (w) => typeof w === "number" && w >= profile.minDoorCm,
-        (w) => `Szerokość drzwi: ${w} cm.`,
-        "Brak pomiaru szerokości drzwi.",
+        (w) => m.doorWidth(w as number),
+        m.noDoor,
+        m.conflict,
       ),
     );
   }
@@ -243,10 +244,11 @@ export function assess(
     requirements.push(
       thresholdRequirement(
         features.toilet,
-        { id: "toilet", label: "Toaleta dostępna dla wózka", keys: ["toilet"] },
+        { id: "toilet", label: m.toiletLabel, keys: ["toilet"] },
         (x) => x === true,
-        (x) => (x ? "Jest toaleta dostępna dla wózka." : "Brak toalety dostępnej dla wózka."),
-        "Brak informacji o toalecie.",
+        (x) => (x ? m.toiletYes : m.toiletNo),
+        m.noToilet,
+        m.conflict,
       ),
     );
   }
@@ -254,10 +256,11 @@ export function assess(
     requirements.push(
       thresholdRequirement(
         features.changing_table,
-        { id: "changing_table", label: "Przewijak", keys: ["changing_table"] },
+        { id: "changing_table", label: m.changingLabel, keys: ["changing_table"] },
         (x) => x === true,
-        (x) => (x ? "Jest przewijak." : "Brak przewijaka."),
-        "Brak informacji o przewijaku.",
+        (x) => (x ? m.changingYes : m.changingNo),
+        m.noChanging,
+        m.conflict,
       ),
     );
   }
@@ -265,10 +268,11 @@ export function assess(
     requirements.push(
       thresholdRequirement(
         features.surface,
-        { id: "surface", label: "Dojście bez bruku i żwiru", keys: ["surface"] },
+        { id: "surface", label: m.surfaceLabel, keys: ["surface"] },
         (s) => s === "smooth" || s === "paving",
-        (s) => `Nawierzchnia: ${formatValue("surface", s)}.`,
-        "Brak informacji o nawierzchni dojścia.",
+        (s) => m.surface(formatValue("surface", s, locale)),
+        m.noSurface,
+        m.conflict,
       ),
     );
   }
@@ -294,20 +298,29 @@ export function assess(
   };
 }
 
-export const VERDICT_TEXT: Record<Verdict, { title: string; body: string }> = {
-  meets: {
-    title: "Spełnia Twoje wymagania",
-    body: "Według dostępnych danych. Sprawdź źródła i daty poniżej.",
+export const VERDICT_TEXTS: Record<Locale, Record<Verdict, { title: string; body: string }>> = {
+  pl: {
+    meets: { title: "Spełnia Twoje wymagania", body: "Według dostępnych danych. Sprawdź źródła i daty poniżej." },
+    barrier: {
+      title: "Bariery dla Twoich potrzeb",
+      body: "Co najmniej jedno wymaganie nie jest spełnione według dostępnych danych.",
+    },
+    incomplete: {
+      title: "Niepełne dane",
+      body: "Nie możemy potwierdzić dostępności. Brak informacji nie oznacza, że miejsce jest dostępne.",
+    },
   },
-  barrier: {
-    title: "Bariery dla Twoich potrzeb",
-    body: "Co najmniej jedno wymaganie nie jest spełnione według dostępnych danych.",
-  },
-  incomplete: {
-    title: "Niepełne dane",
-    body: "Nie możemy potwierdzić dostępności. Brak informacji nie oznacza, że miejsce jest dostępne.",
+  en: {
+    meets: { title: "Meets your needs", body: "According to available data. Check the sources and dates below." },
+    barrier: { title: "Barriers for your needs", body: "At least one requirement is not met according to available data." },
+    incomplete: {
+      title: "Incomplete data",
+      body: "We can't confirm accessibility. Missing information does not mean the place is accessible.",
+    },
   },
 };
+
+export const VERDICT_TEXT = VERDICT_TEXTS.pl;
 
 export interface StopAssessment {
   verdict: Verdict;
@@ -318,29 +331,30 @@ export interface StopAssessment {
 }
 
 /** Ocena przystanku jako początku dojścia: wsiadanie/wysiadanie i peron. */
-export function assessStop(stop: TransitStop, p: Profile): StopAssessment {
+export function assessStop(stop: TransitStop, p: Profile, locale: Locale = "pl"): StopAssessment {
+  const m = MESSAGES[locale];
   const wheelchair = p.maxStepCm < TYPICAL_STEP_CM;
-  const base = { id: "boarding", label: "Wsiadanie i wysiadanie", keys: [] as FeatureKey[] };
+  const base = { id: "boarding", label: m.boardingLabel, keys: [] as FeatureKey[] };
   const boarding: RequirementResult =
     stop.kerb === "kassel"
-      ? { ...base, outcome: "ok", detail: "Peron podwyższony (krawężnik Kassel) — do pojazdu niskopodłogowego niemal bez progu." }
+      ? { ...base, outcome: "ok", detail: m.kassel }
       : stop.kerb === "standard"
         ? wheelchair
-          ? { ...base, outcome: "unknown", detail: "Zwykły krawężnik peronowy — wjazd zwykle wymaga rampy w pojeździe." }
-          : { ...base, outcome: "ok", detail: "Zwykły krawężnik peronowy." }
+          ? { ...base, outcome: "unknown", detail: m.standardKerbWheelchair }
+          : { ...base, outcome: "ok", detail: m.standardKerb }
         : stop.kerb === "none"
           ? wheelchair
-            ? { ...base, outcome: "barrier", detail: "Brak peronu — wsiadanie z poziomu jezdni, duża różnica wysokości." }
-            : { ...base, outcome: "unknown", detail: "Brak peronu — wsiadanie z poziomu jezdni." }
-          : { ...base, outcome: "unknown", detail: "Brak informacji o peronie." };
+            ? { ...base, outcome: "barrier", detail: m.noPlatformWheelchair }
+            : { ...base, outcome: "unknown", detail: m.noPlatform }
+          : { ...base, outcome: "unknown", detail: m.noPlatformInfo };
 
-  const pbase = { id: "platform", label: "Nawierzchnia peronu", keys: [] as FeatureKey[] };
+  const pbase = { id: "platform", label: m.platformLabel, keys: [] as FeatureKey[] };
   const platform: RequirementResult =
     stop.surface === "gravel"
-      ? { ...pbase, outcome: wheelchair || p.avoidCobbles ? "barrier" : "unknown", detail: "Peron nieutwardzony." }
+      ? { ...pbase, outcome: wheelchair || p.avoidCobbles ? "barrier" : "unknown", detail: m.platformGravel }
       : stop.surface
-        ? { ...pbase, outcome: "ok", detail: `Peron: ${formatValue("surface", stop.surface)}.` }
-        : { ...pbase, outcome: "unknown", detail: "Brak informacji o nawierzchni peronu." };
+        ? { ...pbase, outcome: "ok", detail: m.platform(formatValue("surface", stop.surface, locale)) }
+        : { ...pbase, outcome: "unknown", detail: m.noPlatformSurface };
 
   const reqs = [boarding, platform];
   const verdict: Verdict = reqs.some((r) => r.outcome === "barrier")

@@ -106,3 +106,11 @@ test("przystanek: peron Kassel, brak peronu, brak danych", () => {
   assert.equal(assessStop({ ...stop, kerb: "none", surface: "paving" }, PRESETS.stroller).verdict, "incomplete");
   assert.equal(assessStop(stop, PRESETS.wheelchair_manual).verdict, "incomplete");
 });
+
+test("ocena po angielsku dla turystów", () => {
+  const p = place([fact({ key: "entrance", value: "steps" })]);
+  const a = assess(p, PRESETS.wheelchair_manual, SOURCES, NOW, "en");
+  assert.equal(a.requirements[0].label, "Entrance with a threshold of at most 2 cm");
+  assert.equal(a.requirements[0].detail, "Steps at the entrance (height unknown).");
+  assert.equal(assess(p, PRESETS.wheelchair_manual, SOURCES, NOW).requirements[0].detail, "Przy wejściu stopnie (wysokość nieznana).");
+});

@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState, type ComponentProps } from "react";
 import { Platform, Pressable, StyleSheet, Text, View, type PressableProps, type ViewStyle } from "react-native";
-import { VERDICT_TEXT, type Category, type Outcome, type Profile, type Verdict } from "../lib/shared";
+import { useT } from "../lib/strings";
+import type { Category, Outcome, Profile, Verdict } from "../lib/shared";
 import { useTheme, type Theme } from "../lib/theme";
 
 // Wspólne elementy interfejsu. Cele dotykowe ≥ 48 dp, tekst skaluje się z
@@ -21,12 +22,6 @@ export const OUTCOME_MCI: Record<Outcome, IconName> = {
   barrier: "close-circle",
   unknown: "help-circle-outline",
   conflict: "alert-circle",
-};
-export const OUTCOME_LABEL: Record<Outcome, string> = {
-  ok: "spełnione",
-  barrier: "bariera",
-  unknown: "brak danych",
-  conflict: "sprzeczne dane",
 };
 
 export const CATEGORY_ICON: Record<Category, IconName> = {
@@ -218,15 +213,16 @@ export function Tag({ kind, label }: { kind: TagKind; label: string }) {
 
 export function VerdictBadge({ verdict, large }: { verdict: Verdict; large?: boolean }) {
   const t = useTheme();
+  const { s, V } = useT();
   const c = verdictColors(t, verdict);
   return (
     <View
       style={[styles.badge, { backgroundColor: c.bg }, large && { paddingVertical: 6, paddingHorizontal: 12 }]}
       accessible
-      accessibilityLabel={`Ocena: ${VERDICT_TEXT[verdict].title}`}
+      accessibilityLabel={s.verdictA11y(V[verdict].title, "")}
     >
       <Icon name={VERDICT_MCI[verdict]} size={large ? 22 : 18} color={c.fg} />
-      <Text style={{ color: c.fg, fontWeight: "700", fontSize: large ? 16 : 14 }}>{VERDICT_TEXT[verdict].title}</Text>
+      <Text style={{ color: c.fg, fontWeight: "700", fontSize: large ? 16 : 14 }}>{V[verdict].title}</Text>
     </View>
   );
 }

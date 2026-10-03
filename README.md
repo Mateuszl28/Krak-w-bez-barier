@@ -27,6 +27,8 @@ samego modelu danych i tej samej logiki oceny co serwer (`src/lib` jest współd
 - Offline: ostatnio pobrane wyniki są zapisywane na telefonie i pokazywane z datą i ostrzeżeniem.
 - Tryb demonstracyjny awarii źródła (ekran „Źródła i metoda”).
 - Dostępność: role i etykiety dla TalkBack/VoiceOver, skalowanie tekstu systemowego, cele dotykowe ≥ 48 dp, tryb ciemny.
+- **Polski i angielski** (dla turystów): język według ustawień telefonu, przełącznik w zakładce „Potrzeby”.
+  Komunikaty oceny są we wspólnym module `src/lib/i18n.ts` — web, aplikacja i API mówią tak samo.
 
 Uruchomienie na telefonie z Androidem podłączonym przez USB:
 
@@ -171,14 +173,14 @@ systemowego, cele dotykowe ≥ 48 dp.
 | Sprawdzenie | Jak | Wynik |
 |---|---|---|
 | Automatyczny test WCAG 2.2 A/AA | axe-core 4.10 na: wyszukiwarce (lista), karcie miejsca, źródłach, widżecie | 0 naruszeń |
-| Widok mapy | axe-core | 1 problem: `target-size` — nakładające się znaczniki w gęstych miejscach |
+| Widok mapy | axe-core | początkowo `target-size` (nakładające się znaczniki) → naprawione grupowaniem znaczników; ponowny test: 0 naruszeń |
 | Klawiatura | przejście Tab przez nagłówek, profil (strzałki), wyszukiwarkę, wyniki | wszystkie elementy osiągalne, fokus widoczny (3 px), logiczna kolejność |
 | Czytnik ekranu | nazwy dostępne (etykiety pól, role, `aria-live` dla liczby wyników, opisy ocen) | komunikaty o wynikach i ocenach odczytywane tekstem |
 | Kontrast | tokeny kolorów jasny / ciemny | tekst ≥ 4.5:1, elementy interfejsu ≥ 3:1 |
 | Mapa w formie tekstowej | lista wyników + karta miejsca zawierają wszystkie informacje z mapy | spełnione |
 
-**Ograniczenia i plan:** nakładające się znaczniki mapy → grupowanie znaczników (clustering) i większe odstępy;
-tylko język polski → wersja angielska dla turystów; brak testów z użytkownikami (osoby na wózkach, rodzice z
+**Ograniczenia i plan:** wersja angielska jest w aplikacji mobilnej (wersja webowa — po polsku, do tłumaczenia);
+brak testów z użytkownikami (osoby na wózkach, rodzice z
 wózkami, użytkownicy czytników ekranu) → sesje testowe przed wdrożeniem; pełny test TalkBack/VoiceOver aplikacji
 mobilnej → przed publikacją w sklepach.
 

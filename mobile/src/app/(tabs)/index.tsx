@@ -17,7 +17,8 @@ import {
 import { listCities, type City } from "../../lib/api";
 import { useProfile } from "../../lib/profile";
 import { useSearch, type Assessed } from "../../lib/search";
-import { CATEGORY_LABELS, VERDICT_TEXT, formatDate, type Category } from "../../lib/shared";
+import { useT } from "../../lib/strings";
+import { formatDate, type Category } from "../../lib/shared";
 import { useTheme } from "../../lib/theme";
 
 const CATEGORIES: Category[] = ["culture", "food", "accommodation", "toilet", "attraction", "health", "office", "shop"];
@@ -27,6 +28,7 @@ export default function Search() {
   const insets = useSafeAreaInsets();
   const s = useSearch();
   const { city, setCity } = useProfile();
+  const { s: S, L, locale } = useT();
   const [q, setQ] = useState(s.query);
   const [cities, setCities] = useState<City[]>([{ id: "krakow", name: "Kraków" }]);
   const [pickCity, setPickCity] = useState(false);
@@ -37,11 +39,7 @@ export default function Search() {
   }, []);
 
   const down = s.loaded?.data.status.filter((x) => !x.ok) ?? [];
-  const statusText = s.error
-    ? s.error
-    : s.loading
-      ? "Wczytywanie…"
-      : `${s.results.length} ${s.results.length === 1 ? "miejsce" : "miejsc"}${s.near ? " · od najbliższych" : ""}`;
+  const statusText = s.error ? s.error : s.loading ? S.loading : `${S.places(s.results.length)}${s.near ? S.nearest : ""}`;
 
   const header = (
     <View>
@@ -49,11 +47,11 @@ export default function Search() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Icon name="wheelchair-accessibility" size={22} color={t.heroMuted} />
-            <Text style={{ color: t.heroMuted, fontWeight: "700", fontSize: 15 }}>Bez barier</Text>
+            <Text style={{ color: t.heroMuted, fontWeight: "700", fontSize: 15 }}>{S.brand}</Text>
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Miasto: ${cityName}. Zmień miasto`}
+            accessibilityLabel={S.cityLabel(cityName)}
             accessibilityState={{ expanded: pickCity }}
             onPress={() => setPickCity(!pickCity)}
             style={styles.cityPill}
@@ -64,7 +62,7 @@ export default function Search() {
           </Pressable>
         </View>
         {pickCity && (
-          <View accessibilityRole="radiogroup" accessibilityLabel="Wybierz miasto" style={styles.cityList}>
+          <View accessibilityRole="radiogroup" accessibilityLabel={S.pickCity} style={styles.cityList}>
             {cities.map((c) => (
               <Pressable
                 key={c.id}
@@ -82,10 +80,10 @@ export default function Search() {
           </View>
         )}
         <Text accessibilityRole="header" style={[styles.heroTitle, { color: t.heroText }]}>
-          Dokąd się wybierasz?
+          {S.heroTitle}
         </Text>
         <Text style={{ color: t.heroMuted, fontSize: 15, marginBottom: 14 }}>
-          Sprawdzimy bariery i udogodnienia pod Twoje potrzeby — ze źródłem i datą.
+          {S.heroBody}
         </Text>
 
         <ProfileTiles onDark />
@@ -93,19 +91,19 @@ export default function Search() {
         <View style={[styles.searchBox, { backgroundColor: t.surface }]}>
           <Icon name="magnify" size={24} color={t.muted} />
           <TextInput
-            accessibilityLabel="Nazwa miejsca lub adres"
+            accessibilityLabel={S.searchLabel}
             value={q}
             onChangeText={setQ}
             onSubmitEditing={() => s.search(q)}
             returnKeyType="search"
-            placeholder="Muzeum, kawiarnia, ulica…"
+            placeholder={S.searchPlaceholder}
             placeholderTextColor={t.muted}
             style={[styles.searchInput, { color: t.text }]}
           />
           {q.length > 0 && (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Wyczyść"
+              accessibilityLabel={S.clear}
               onPress={() => {
                 setQ("");
                 s.search("");
@@ -117,7 +115,7 @@ export default function Search() {
           )}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Szukaj"
+            accessibilityLabel={S.search}
             onPress={() => s.search(q)}
             style={[styles.searchBtn, { backgroundColor: t.accent }]}
           >
@@ -128,11 +126,11 @@ export default function Search() {
 
       <View style={{ paddingTop: 14, gap: 10 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          <Chip label="Wszystkie" icon="apps" selected={!s.category} onPress={() => s.setCategory(undefined)} />
+          <Chip label={S.all} icon="apps" selected={!s.category} onPress={() => s.setCategory(undefined)} />
           {CATEGORIES.map((c) => (
             <Chip
               key={c}
-              label={CATEGORY_LABELS[c]}
+              label={L.category[c]}
               icon={CATEGORY_ICON[c]}
               selected={s.category === c}
               onPress={() => s.setCategory(s.category === c ? undefined : c)}
@@ -140,10 +138,10 @@ export default function Search() {
           ))}
         </ScrollView>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          <Chip role="checkbox" label="Najbliżej mnie" icon="crosshairs-gps" selected={!!s.near} onPress={s.locate} />
+          <Chip role="checkbox" label={S.nearMe} icon="crosshairs-gps" selected={!!s.near} onPress={s.locate} />
           <Chip
             role="checkbox"
-            label="Tylko spełniające wymagania"
+            label={S.onlyMatching}
             icon="check-decagram"
             selected={s.onlyMatching}
             onPress={() => s.setOnlyMatching(!s.onlyMatching)}
@@ -152,13 +150,13 @@ export default function Search() {
 
         <View style={{ paddingHorizontal: 16, gap: 0 }}>
           {s.loaded?.cachedAt && (
-            <Banner title="Jesteś offline — zapisana kopia" icon="cloud-off-outline">
-              {`Wyniki z ${formatDate(s.loaded.cachedAt)}. Mogą być nieaktualne.`}
+            <Banner title={S.offlineTitle} icon="cloud-off-outline">
+              {S.offlineBody(formatDate(s.loaded.cachedAt, locale))}
             </Banner>
           )}
           {down.length > 0 && (
-            <Banner title="Część źródeł jest niedostępna">
-              {`Brak danych z: ${down.map((x) => s.loaded!.data.sources[x.sourceId]?.name ?? x.sourceId).join(", ")}. Brak informacji nie oznacza braku barier.`}
+            <Banner title={S.sourcesDownTitle}>
+              {S.sourcesDownBody(down.map((x) => s.loaded!.data.sources[x.sourceId]?.name ?? x.sourceId).join(", "))}
             </Banner>
           )}
           <Text accessibilityLiveRegion="polite" style={{ color: t.muted, fontSize: 15, fontWeight: "600", marginBottom: 4 }}>
@@ -185,16 +183,17 @@ export default function Search() {
 
 function ResultCard({ place, assessment }: Assessed) {
   const t = useTheme();
+  const { s: S, L, V } = useT();
   const vc = verdictColors(t, assessment.verdict);
   const reasons = assessment.requirements.filter((r) => r.outcome !== "ok").slice(0, 2);
   const label = [
     place.name,
-    CATEGORY_LABELS[place.category],
-    VERDICT_TEXT[assessment.verdict].title,
+    L.category[place.category],
+    V[assessment.verdict].title,
     ...reasons.map((r) => r.detail),
-    assessment.usesSample ? "Dane przykładowe" : "",
-    assessment.usesUnverified ? "Niezweryfikowane" : "",
-    assessment.stale ? "Mogą być nieaktualne" : "",
+    assessment.usesSample ? S.tagSample : "",
+    assessment.usesUnverified ? S.tagUnverified : "",
+    assessment.stale ? S.tagStale : "",
   ]
     .filter(Boolean)
     .join(". ");
@@ -203,7 +202,7 @@ function ResultCard({ place, assessment }: Assessed) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint="Otwiera szczegóły i źródła"
+      accessibilityHint={S.openDetails}
       onPress={() => router.push({ pathname: "/miejsce/[id]", params: { id: place.id } })}
       style={({ pressed }) => [
         styles.card,
@@ -218,7 +217,7 @@ function ResultCard({ place, assessment }: Assessed) {
             {place.name}
           </Text>
           <Text style={{ color: t.muted, fontSize: 14 }} numberOfLines={1}>
-            {CATEGORY_LABELS[place.category]}
+            {L.category[place.category]}
             {place.address ? ` · ${place.address}` : ""}
           </Text>
         </View>
@@ -231,13 +230,13 @@ function ResultCard({ place, assessment }: Assessed) {
         </Text>
       ))}
       {assessment.verdict === "meets" && assessment.generalOnly && (
-        <Text style={{ color: t.muted, fontSize: 14 }}>Na podstawie ogólnej oceny, bez szczegółowych pomiarów.</Text>
+        <Text style={{ color: t.muted, fontSize: 14 }}>{S.generalOnlyNote}</Text>
       )}
       {(assessment.usesSample || assessment.usesUnverified || assessment.stale) && (
         <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-          {assessment.usesSample && <Tag kind="sample" label="Dane przykładowe" />}
-          {assessment.usesUnverified && <Tag kind="unverified" label="Niezweryfikowane" />}
-          {assessment.stale && <Tag kind="stale" label="Mogą być nieaktualne" />}
+          {assessment.usesSample && <Tag kind="sample" label={S.tagSample} />}
+          {assessment.usesUnverified && <Tag kind="unverified" label={S.tagUnverified} />}
+          {assessment.stale && <Tag kind="stale" label={S.tagStale} />}
         </View>
       )}
     </Pressable>

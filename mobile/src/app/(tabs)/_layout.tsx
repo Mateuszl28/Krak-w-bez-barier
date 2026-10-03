@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "../../components/ui";
+import { useT } from "../../lib/strings";
 import { useTheme } from "../../lib/theme";
 
 const tab = (icon: IconName) => ({ color }: { color: ColorValue }) => <Icon name={icon} size={26} color={color as string} />;
@@ -9,6 +10,7 @@ const tab = (icon: IconName) => ({ color }: { color: ColorValue }) => <Icon name
 export default function TabsLayout() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { s } = useT();
   return (
     <Tabs
       screenOptions={{
@@ -28,10 +30,10 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: t.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Szukaj", headerShown: false, tabBarIcon: tab("magnify") }} />
-      <Tabs.Screen name="mapa" options={{ title: "Mapa", tabBarIcon: tab("map-outline") }} />
-      <Tabs.Screen name="profil" options={{ title: "Potrzeby", headerTitle: "Twoje potrzeby", tabBarIcon: tab("tune-variant") }} />
-      <Tabs.Screen name="zrodla" options={{ title: "Info", headerTitle: "Źródła i metoda", tabBarIcon: tab("information-outline") }} />
+      <Tabs.Screen name="index" options={{ title: s.tabSearch, headerShown: false, tabBarIcon: tab("magnify") }} />
+      <Tabs.Screen name="mapa" options={{ title: s.tabMap, tabBarIcon: tab("map-outline") }} />
+      <Tabs.Screen name="profil" options={{ title: s.tabNeeds, headerTitle: s.needsTitle, tabBarIcon: tab("tune-variant") }} />
+      <Tabs.Screen name="zrodla" options={{ title: s.tabInfo, headerTitle: s.infoTitle, tabBarIcon: tab("information-outline") }} />
     </Tabs>
   );
 }

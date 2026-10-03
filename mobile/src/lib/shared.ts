@@ -3,4 +3,5 @@
 export * from "../../../src/lib/model.ts";
 export * from "../../../src/lib/assess.ts";
 export * from "../../../src/lib/labels.ts";
+export * from "../../../src/lib/i18n.ts";
 export { SOURCES } from "../../../src/lib/sources.ts";

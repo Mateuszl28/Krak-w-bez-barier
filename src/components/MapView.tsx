@@ -1,7 +1,10 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import L from "leaflet";
+import "leaflet.markercluster";
 import { useEffect, useRef } from "react";
 import { VERDICT_TEXT } from "@/lib/assess";
 import type { Assessed } from "./SearchView";
@@ -16,7 +19,7 @@ function escapeHtml(s: string) {
 export default function MapView({ results, height }: { results: Assessed[]; height?: number }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const layer = useRef<L.LayerGroup | null>(null);
+  const layer = useRef<L.MarkerClusterGroup | null>(null);
 
   useEffect(() => {
     if (!el.current || map.current) return;
@@ -25,7 +28,8 @@ export default function MapView({ results, height }: { results: Assessed[]; heig
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map.current);
-    layer.current = L.layerGroup().addTo(map.current);
+    // Grupowanie znaczników: w gęstych miejscach znaczniki nie nachodzą na siebie.
+    layer.current = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false }).addTo(map.current);
     return () => {
       map.current?.remove();
       map.current = null;

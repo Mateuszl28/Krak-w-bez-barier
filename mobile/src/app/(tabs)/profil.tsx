@@ -1,13 +1,15 @@
 import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { ProfileTiles } from "../../components/ProfileTiles";
-import { Card, P, SectionTitle } from "../../components/ui";
+import { Card, Chip, P, SectionTitle } from "../../components/ui";
 import { useProfile } from "../../lib/profile";
 import type { Profile } from "../../lib/shared";
+import { useT } from "../../lib/strings";
 import { useTheme } from "../../lib/theme";
 
 export default function ProfileScreen() {
   const t = useTheme();
-  const { profile, setProfile } = useProfile();
+  const { profile, setProfile, locale, setLocale } = useProfile();
+  const { s } = useT();
   const update = (patch: Partial<Profile>) => setProfile({ ...profile, ...patch, preset: "custom" });
 
   const num = (label: string, value: number, onChange: (n: number) => void, hint: string) => (
@@ -33,25 +35,22 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48, gap: 12 }}>
-      <P>
-        Wybierz, czym się poruszasz, albo ustaw własne wymagania. Nie pytamy o niepełnosprawność — wystarczą Twoje
-        potrzeby.
-      </P>
+      <P>{s.needsIntro}</P>
       <ProfileTiles />
-      <SectionTitle icon="tune-variant">Szczegółowe wymagania</SectionTitle>
+      <SectionTitle icon="tune-variant">{s.detailedRequirements}</SectionTitle>
       <Card style={{ gap: 14 }}>
-        {num(
-          "Najwyższy próg, który pokonam (cm)",
-          profile.maxStepCm,
-          (n) => update({ maxStepCm: n }),
-          "Na przykład 2 dla wózka ręcznego",
-        )}
-        {num("Potrzebna szerokość przejścia (cm)", profile.minDoorCm, (n) => update({ minDoorCm: n }), "Na przykład 80")}
-        {toggle("Potrzebuję toalety dostępnej dla wózka", profile.needToilet, (b) => update({ needToilet: b }))}
-        {toggle("Potrzebuję przewijaka", profile.needChangingTable, (b) => update({ needChangingTable: b }))}
-        {toggle("Unikam bruku i żwiru na dojściu", profile.avoidCobbles, (b) => update({ avoidCobbles: b }))}
+        {num(s.maxStep, profile.maxStepCm, (n) => update({ maxStepCm: n }), s.maxStepHint)}
+        {num(s.minDoor, profile.minDoorCm, (n) => update({ minDoorCm: n }), s.minDoorHint)}
+        {toggle(s.needToilet, profile.needToilet, (b) => update({ needToilet: b }))}
+        {toggle(s.needChanging, profile.needChangingTable, (b) => update({ needChangingTable: b }))}
+        {toggle(s.avoidCobbles, profile.avoidCobbles, (b) => update({ avoidCobbles: b }))}
       </Card>
-      <P muted>Ustawienia zapisują się tylko na tym telefonie. Zmiana działa od razu na liście, mapie i kartach miejsc.</P>
+      <P muted>{s.savedLocally}</P>
+      <SectionTitle icon="translate">{s.language}</SectionTitle>
+      <View accessibilityRole="radiogroup" accessibilityLabel={s.language} style={{ flexDirection: "row", gap: 8 }}>
+        <Chip label="Polski" selected={locale === "pl"} onPress={() => setLocale("pl")} />
+        <Chip label="English" selected={locale === "en"} onPress={() => setLocale("en")} />
+      </View>
     </ScrollView>
   );
 }
