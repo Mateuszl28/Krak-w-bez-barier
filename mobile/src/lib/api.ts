@@ -50,6 +50,7 @@ export interface SearchParams {
   category?: Category;
   near?: [number, number];
   awaria?: string;
+  city?: string;
 }
 
 export function searchPlaces(p: SearchParams) {
@@ -61,31 +62,49 @@ export function searchPlaces(p: SearchParams) {
     params.set("lon", String(p.near[1]));
   }
   if (p.awaria) params.set("awaria", p.awaria);
+  if (p.city) params.set("city", p.city);
   return getJson<PlacesResponse>(`/api/v1/places?${params}`);
 }
 
-export function getPlace(id: string, awaria?: string) {
-  return getJson<PlaceResponse>(`/api/v1/places/${encodeURIComponent(id)}${awaria ? `?awaria=${awaria}` : ""}`);
+function query(awaria?: string, city?: string) {
+  const p = new URLSearchParams();
+  if (awaria) p.set("awaria", awaria);
+  if (city) p.set("city", city);
+  const s = p.toString();
+  return s ? `?${s}` : "";
+}
+
+export function getPlace(id: string, awaria?: string, city?: string) {
+  return getJson<PlaceResponse>(`/api/v1/places/${encodeURIComponent(id)}${query(awaria, city)}`);
+}
+
+export interface City {
+  id: string;
+  name: string;
+}
+
+export async function listCities(): Promise<City[]> {
+  return (await getJson<{ cities: City[] }>("/api/v1/cities")).data.cities;
 }
 
 export type LiveResult =
   | { ok: true; lastEdit?: string; changed: boolean; facts: Fact[]; snapshotAt?: string }
   | { ok: false; error: string; snapshotAt?: string };
 
-export async function liveCheck(id: string, awaria?: string): Promise<LiveResult> {
+export async function liveCheck(id: string, awaria?: string, city?: string): Promise<LiveResult> {
   try {
-    const res = await fetch(`${API_URL}/api/places/${id}/live${awaria ? `?awaria=${awaria}` : ""}`);
+    const res = await fetch(`${API_URL}/api/places/${id}/live${query(awaria, city)}`);
     return (await res.json()) as LiveResult;
   } catch {
     return { ok: false, error: "brak połączenia" };
   }
 }
 
-export async function sendReport(placeId: string, facts: Record<string, unknown>, comment: string) {
+export async function sendReport(placeId: string, facts: Record<string, unknown>, comment: string, city?: string) {
   const res = await fetch(`${API_URL}/api/reports`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ placeId, facts, comment }),
+    body: JSON.stringify({ placeId, facts, comment, city }),
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) throw new Error(body.error ?? "Nie udało się wysłać zgłoszenia.");

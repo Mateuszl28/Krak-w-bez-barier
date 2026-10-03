@@ -1,9 +1,9 @@
 import { ScrollView, Switch, Text, View } from "react-native";
-import { Card, H2, P, Tag } from "../components/ui";
-import { API_URL } from "../lib/api";
-import { useProfile } from "../lib/profile";
-import { SOURCES, SOURCE_KIND_LABELS } from "../lib/shared";
-import { useTheme } from "../lib/theme";
+import { Card, P, SectionTitle, Tag } from "../../components/ui";
+import { API_URL } from "../../lib/api";
+import { useProfile } from "../../lib/profile";
+import { SOURCES, SOURCE_KIND_LABELS } from "../../lib/shared";
+import { useTheme } from "../../lib/theme";
 
 export default function SourcesScreen() {
   const t = useTheme();
@@ -15,7 +15,7 @@ export default function SourcesScreen() {
         skąd pochodzi, z kiedy jest i na ile jest pewna.
       </P>
 
-      <H2>Źródła</H2>
+      <SectionTitle icon="database-outline">Źródła</SectionTitle>
       <View style={{ gap: 8 }}>
         {Object.values(SOURCES).map((s) => (
           <Card key={s.id} style={{ gap: 4 }}>
@@ -28,7 +28,7 @@ export default function SourcesScreen() {
         ))}
       </View>
 
-      <H2>Poziomy wiarygodności</H2>
+      <SectionTitle icon="shield-check-outline">Poziomy wiarygodności</SectionTitle>
       <View style={{ gap: 6 }}>
         <Tag kind="confirmed" label="Potwierdzone przez kilka źródeł" />
         <P>Co najmniej dwa niezależne źródła podają zgodną informację.</P>
@@ -42,13 +42,13 @@ export default function SourcesScreen() {
         <P>Dane przygotowane do demonstracji.</P>
       </View>
 
-      <H2>Prywatność</H2>
+      <SectionTitle icon="lock-outline">Prywatność</SectionTitle>
       <P>
         Nie pytamy o niepełnosprawność ani dane osobowe. Profil potrzeb i lokalizacja zostają na telefonie. Zgłoszenia
         są anonimowe.
       </P>
 
-      <H2>Tryb demonstracyjny</H2>
+      <SectionTitle icon="flask-outline">Tryb demonstracyjny</SectionTitle>
       <Card style={{ gap: 6 }}>
         <View style={{ flexDirection: "row", alignItems: "center", minHeight: 48, gap: 12 }}>
           <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>Symuluj awarię OpenStreetMap</Text>

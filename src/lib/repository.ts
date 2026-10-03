@@ -93,7 +93,14 @@ const cache = new Map<string, Promise<CityData>>();
  */
 export function loadCity(cityId = "krakow", offline: string[] = []): Promise<CityData> {
   const key = `${cityId}|${offline.join(",")}`;
-  if (!cache.has(key)) cache.set(key, buildCity(cityId, offline));
+  if (!cache.has(key)) {
+    // Nieudane wczytanie (np. nieznane miasto) nie zostaje w pamięci podręcznej.
+    const p = buildCity(cityId, offline).catch((err) => {
+      cache.delete(key);
+      throw err;
+    });
+    cache.set(key, p);
+  }
   return cache.get(key)!;
 }
 
@@ -160,7 +167,10 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
   });
 
   await load("user_reports", async () => {
-    const seed = await readJson<{ reports: Report[] }>(path.join(dir, "reports.seed.json"));
+    // Przykładowe zgłoszenia są opcjonalne — nowe miasto startuje bez nich.
+    const seed = await readJson<{ reports: Report[] }>(path.join(dir, "reports.seed.json")).catch(() => ({
+      reports: [] as Report[],
+    }));
     const reports = [...seed.reports, ...(await readStoredReports())];
     for (const r of reports) {
       const place = byId.get(r.placeId);
@@ -264,4 +274,21 @@ export function nearbyStops(stops: TransitStop[], place: Place, limit = 4, radiu
     .filter((s) => s.distanceM <= radiusM)
     .sort((a, b) => a.distanceM - b.distanceM)
     .slice(0, limit);
+}
+
+/** Miasta z katalogu data/ — każde to osobny plik city.json. */
+export async function listCities(): Promise<Pick<CityConfig, "id" | "name" | "center">[]> {
+  const { readdir } = await import("node:fs/promises");
+  const dirs = await readdir(DATA_DIR, { withFileTypes: true });
+  const out: Pick<CityConfig, "id" | "name" | "center">[] = [];
+  for (const d of dirs) {
+    if (!d.isDirectory()) continue;
+    try {
+      const c = await readJson<CityConfig>(path.join(DATA_DIR, d.name, "city.json"));
+      out.push({ id: c.id, name: c.name, center: c.center });
+    } catch {
+      // katalog bez city.json (np. cache)
+    }
+  }
+  return out;
 }

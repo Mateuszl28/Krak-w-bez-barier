@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button, Chip, P } from "../../components/ui";
 import { sendReport } from "../../lib/api";
+import { useProfile } from "../../lib/profile";
 import { useTheme } from "../../lib/theme";
 
 // Zgłoszenie korekty. Trafia na kartę jako niezweryfikowane. Bez danych osobowych.
@@ -11,6 +12,7 @@ type Tri = "" | "yes" | "no";
 export default function ReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
+  const { city } = useProfile();
   const [entrance, setEntrance] = useState("");
   const [steps, setSteps] = useState("");
   const [height, setHeight] = useState("");
@@ -36,7 +38,7 @@ export default function ReportScreen() {
     setBusy(true);
     setMsg("");
     try {
-      await sendReport(id, facts, comment);
+      await sendReport(id, facts, comment, city);
       router.back();
     } catch (e) {
       setMsg((e as Error).message);

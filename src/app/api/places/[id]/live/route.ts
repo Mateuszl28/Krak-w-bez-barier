@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { osmToPlace, type OsmElement } from "@/lib/osm";
 import { loadCity } from "@/lib/repository";
+import { cityFrom } from "@/lib/request";
 
 // Sprawdza aktualny stan obiektu bezpośrednio w OSM API (bez czekania na import).
 const TYPES: Record<string, OsmElement["type"]> = { n: "node", w: "way", r: "relation" };
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const city = await loadCity();
+  const city = await loadCity(cityFrom(new URL(req.url).searchParams)).catch(() => null);
+  if (!city) return NextResponse.json({ error: "Nieznane miasto" }, { status: 404 });
   const stored = city.byId.get(id);
   const osm = city.status.find((s) => s.sourceId === "osm");
   const m = id.match(/^osm-([nwr])(\d+)$/);

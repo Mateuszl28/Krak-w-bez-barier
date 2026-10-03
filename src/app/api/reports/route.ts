@@ -30,14 +30,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Zbyt wiele zgłoszeń. Spróbuj za godzinę." }, { status: 429 });
   }
 
-  let body: { placeId?: unknown; facts?: unknown; comment?: unknown };
+  let body: { placeId?: unknown; facts?: unknown; comment?: unknown; city?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
   }
 
-  const city = await loadCity();
+  const city = await loadCity(typeof body.city === "string" && /^[a-z-]{2,40}$/.test(body.city) ? body.city : "krakow").catch(
+    () => null,
+  );
+  if (!city) return NextResponse.json({ error: "Nieznane miasto." }, { status: 404 });
   if (typeof body.placeId !== "string" || !city.byId.has(body.placeId)) {
     return NextResponse.json({ error: "Nie znaleziono miejsca." }, { status: 404 });
   }

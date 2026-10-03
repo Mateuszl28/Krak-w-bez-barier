@@ -1,23 +1,28 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Linking, Platform, ScrollView, Text, View } from "react-native";
+import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PlacesMap } from "../../components/PlacesMap";
 import { StopsList } from "../../components/StopsList";
 import {
   Banner,
   Button,
+  CATEGORY_ICON,
   Card,
-  H1,
-  H2,
-  OUTCOME_ICON,
+  Disclosure,
+  Icon,
+  IconCircle,
   OUTCOME_LABEL,
+  OUTCOME_MCI,
   P,
+  SectionTitle,
   Tag,
-  VERDICT_ICON,
+  VERDICT_MCI,
   outcomeColor,
+  shadow,
   verdictColors,
 } from "../../components/ui";
-import { getPlace, liveCheck, type LiveResult, type Loaded, type PlaceResponse } from "../../lib/api";
+import { getPlace, liveCheck, sendReport, type LiveResult, type Loaded, type PlaceResponse } from "../../lib/api";
 import { useProfile } from "../../lib/profile";
 import {
   CATEGORY_LABELS,
@@ -27,6 +32,7 @@ import {
   assess,
   formatDate,
   formatValue,
+  type FactValue,
   type FeatureKey,
   type FeatureView,
   type Source,
@@ -36,20 +42,26 @@ import { useTheme } from "../../lib/theme";
 export default function PlaceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
-  const { profile, awaria } = useProfile();
+  const insets = useSafeAreaInsets();
+  const { profile, awaria, city } = useProfile();
   const [loaded, setLoaded] = useState<Loaded<PlaceResponse> | null>(null);
   const [error, setError] = useState("");
   const [live, setLive] = useState<LiveResult | null>(null);
   const [checking, setChecking] = useState(false);
 
   // Odświeżamy po powrocie z formularza zgłoszenia.
-  useFocusEffect(
-    useCallback(() => {
-      getPlace(id, awaria)
-        .then(setLoaded)
-        .catch(() => setError("Nie udało się wczytać miejsca. Sprawdź połączenie."));
-    }, [id, awaria]),
-  );
+  const reload = useCallback(() => {
+    getPlace(id, awaria, city)
+      .then(setLoaded)
+      .catch(() => setError("Nie udało się wczytać miejsca. Sprawdź połączenie."));
+  }, [id, awaria, city]);
+  useFocusEffect(reload);
+
+  /** Potwierdzenie aktualności = zgłoszenie z tą samą wartością (niezależne źródło). */
+  const confirm = async (key: FeatureKey, value: FactValue) => {
+    await sendReport(id, { [key]: value }, "Potwierdzenie aktualności na miejscu", city);
+    reload();
+  };
 
   const a = useMemo(
     () => (loaded ? assess(loaded.data.place, profile, loaded.data.sources) : null),
@@ -81,200 +93,293 @@ export default function PlaceScreen() {
 
   const check = async () => {
     setChecking(true);
-    setLive(await liveCheck(place.id, awaria));
+    setLive(await liveCheck(place.id, awaria, city));
     setChecking(false);
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
-      <Stack.Screen options={{ title: place.name }} />
-      <H1>{place.name}</H1>
-      <P muted>
-        {CATEGORY_LABELS[place.category]}
-        {place.address ? ` · ${place.address}` : ""}
-      </P>
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ title: "" }} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}>
+        {/* Nagłówek z oceną */}
+        <View style={[styles.hero, { backgroundColor: t.hero }]}>
+          <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+            <IconCircle name={CATEGORY_ICON[place.category]} color={t.hero} bg="#ffffff" size={52} />
+            <View style={{ flex: 1 }}>
+              <Text accessibilityRole="header" style={{ color: t.heroText, fontSize: 24, fontWeight: "800" }}>
+                {place.name}
+              </Text>
+              <Text style={{ color: t.heroMuted, fontSize: 15 }}>
+                {CATEGORY_LABELS[place.category]}
+                {place.address ? ` · ${place.address}` : ""}
+              </Text>
+            </View>
+          </View>
+          <View
+            accessible
+            accessibilityLabel={`Ocena: ${v.title}. ${v.body}`}
+            style={[styles.verdict, { backgroundColor: vc.bg }]}
+          >
+            <Icon name={VERDICT_MCI[a.verdict]} size={34} color={vc.fg} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: vc.fg, fontSize: 20, fontWeight: "800" }}>{v.title}</Text>
+              <Text style={{ color: t.text, fontSize: 15 }}>{v.body}</Text>
+            </View>
+          </View>
+        </View>
 
-      {loaded.cachedAt && (
-        <Banner title="Jesteś offline — zapisana kopia">{`Stan z ${formatDate(loaded.cachedAt)}.`}</Banner>
-      )}
-      {(place.sample || a.usesSample) && (
-        <Banner title="Dane przykładowe">Ten wpis zawiera dane przygotowane na potrzeby demonstracji. Nie opisują rzeczywistego stanu obiektu.</Banner>
-      )}
+        <View style={{ padding: 16 }}>
+          {loaded.cachedAt && (
+            <Banner title="Jesteś offline — zapisana kopia" icon="cloud-off-outline">
+              {`Stan z ${formatDate(loaded.cachedAt)}.`}
+            </Banner>
+          )}
+          {(place.sample || a.usesSample) && (
+            <Banner tone="sample" title="Dane przykładowe">
+              Wpis przygotowany na potrzeby demonstracji — nie opisuje rzeczywistego obiektu.
+            </Banner>
+          )}
+          {a.verdict === "meets" && a.generalOnly && (
+            <Banner tone="info" title="Ocena ogólna">
+              Źródło podaje „dostępne”, ale bez szczegółowych pomiarów wejścia i drzwi.
+            </Banner>
+          )}
+          {a.usesUnverified && (
+            <Banner title="Niezweryfikowane informacje" icon="account-question">
+              Część informacji pochodzi tylko ze zgłoszeń użytkowników.
+            </Banner>
+          )}
+          {a.stale && (
+            <Banner title="Mogą być nieaktualne" icon="calendar-alert">
+              Część informacji ma ponad 2 lata.
+            </Banner>
+          )}
 
+          <SectionTitle icon="clipboard-check-outline">Twoje wymagania</SectionTitle>
+          <Card style={{ paddingVertical: 4 }}>
+            {a.requirements.map((r, i) => {
+              const color = outcomeColor(t, r.outcome);
+              return (
+                <View
+                  key={r.id}
+                  accessible
+                  accessibilityLabel={`${r.label}: ${OUTCOME_LABEL[r.outcome]}. ${r.detail}`}
+                  style={[styles.req, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.line }]}
+                >
+                  <Icon name={OUTCOME_MCI[r.outcome]} size={28} color={color} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: t.text, fontWeight: "700", fontSize: 16 }}>{r.label}</Text>
+                    <Text style={{ color, fontWeight: "700", fontSize: 14 }}>{OUTCOME_LABEL[r.outcome]}</Text>
+                    <Text style={{ color: t.text, fontSize: 15 }}>{r.detail}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </Card>
+          <Button
+            variant="ghost"
+            icon="tune-variant"
+            label="Zmień swoje wymagania"
+            onPress={() => router.push("/profil")}
+            style={{ alignSelf: "flex-start", paddingHorizontal: 0 }}
+          />
+
+          <SectionTitle icon="text-box-search-outline">Bariery i udogodnienia</SectionTitle>
+          <P muted>Dotknij, aby zobaczyć źródło, datę i wiarygodność każdej informacji.</P>
+          <Card style={{ paddingVertical: 4 }}>
+            {FEATURE_ORDER.map((key, i) => (
+              <View key={key} style={i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.line } : undefined}>
+                <FeatureRow
+                  featureKey={key}
+                  view={a.features[key]}
+                  sources={sources}
+                  onConfirm={confirm}
+                  onReport={() => router.push({ pathname: "/zglos/[id]", params: { id: place.id } })}
+                />
+              </View>
+            ))}
+          </Card>
+
+          <SectionTitle icon="bus-stop">Dojazd komunikacją</SectionTitle>
+          <StopsList stops={loaded.data.stops ?? []} profile={profile} sources={sources} />
+
+          <SectionTitle icon="map-marker-radius">Na mapie</SectionTitle>
+          <PlacesMap results={[{ place, assessment: a }]} height={220} />
+
+          {place.id.startsWith("osm-") && (
+            <>
+              <SectionTitle icon="update">Aktualność danych OSM</SectionTitle>
+              <P muted>Dane OpenStreetMap są importowane codziennie. Możesz sprawdzić ten obiekt teraz.</P>
+              <Button
+                variant="secondary"
+                icon="refresh"
+                label={checking ? "Sprawdzam…" : "Sprawdź teraz w OpenStreetMap"}
+                disabled={checking}
+                onPress={check}
+              />
+              <View accessibilityLiveRegion="polite" style={{ marginTop: 10 }}>
+                {live?.ok === true && (
+                  <Banner
+                    tone="info"
+                    title={live.changed ? "W OSM są zmiany od ostatniego importu" : "Dane w OSM nie zmieniły się od importu"}
+                  >
+                    {live.lastEdit ? `Ostatnia edycja obiektu w OSM: ${formatDate(live.lastEdit)}.` : ""}
+                  </Banner>
+                )}
+                {live?.ok === false && (
+                  <Banner title="Nie udało się połączyć z OpenStreetMap" icon="cloud-off-outline">
+                    {`Pokazujemy kopię z ${live.snapshotAt ? formatDate(live.snapshotAt) : "ostatniego importu"}. Nie traktuj jej jako potwierdzenia bieżącego stanu.`}
+                  </Banner>
+                )}
+              </View>
+            </>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Stały pasek akcji */}
       <View
-        accessible
-        accessibilityLabel={`Ocena: ${v.title}. ${v.body}`}
-        style={{ borderWidth: 2, borderColor: vc.fg, backgroundColor: vc.bg, borderRadius: 12, padding: 14, gap: 6 }}
+        style={[
+          styles.actions,
+          { backgroundColor: t.surface, borderTopColor: t.line, paddingBottom: 12 + insets.bottom },
+          shadow(t, 2),
+        ]}
       >
-        <Text style={{ color: vc.fg, fontSize: 22, fontWeight: "800" }}>
-          {VERDICT_ICON[a.verdict]} {v.title}
-        </Text>
-        <Text style={{ color: t.text, fontSize: 16 }}>{v.body}</Text>
-        {a.verdict === "meets" && a.generalOnly && (
-          <Text style={{ color: t.text }}>ⓘ Ocena opiera się na ogólnej deklaracji „dostępne”, bez szczegółowych pomiarów.</Text>
-        )}
-        {a.usesUnverified && <Text style={{ color: t.text }}>⚠ Część informacji pochodzi tylko z niezweryfikowanych zgłoszeń.</Text>}
-        {a.stale && <Text style={{ color: t.text }}>⚠ Część informacji ma ponad 2 lata i może być nieaktualna.</Text>}
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-        <Button label="🧭 Prowadź do miejsca" onPress={navigate} style={{ flexGrow: 1 }} />
+        <Button icon="navigation-variant" label="Prowadź" onPress={navigate} style={{ flex: 1 }} />
         <Button
-          label="Zmień wymagania"
           variant="secondary"
-          onPress={() => router.push("/profil")}
-          style={{ flexGrow: 1 }}
+          icon="pencil-outline"
+          label="Zgłoś zmianę"
+          onPress={() => router.push({ pathname: "/zglos/[id]", params: { id: place.id } })}
+          style={{ flex: 1 }}
         />
       </View>
-
-      <H2>Twoje wymagania</H2>
-      <View style={{ gap: 8 }}>
-        {a.requirements.map((r) => {
-          const color = outcomeColor(t, r.outcome);
-          return (
-            <View
-              key={r.id}
-              accessible
-              accessibilityLabel={`${r.label}: ${OUTCOME_LABEL[r.outcome]}. ${r.detail}`}
-              style={{
-                flexDirection: "row",
-                gap: 10,
-                padding: 12,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: t.line,
-                backgroundColor: t.surface,
-              }}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  borderWidth: 2,
-                  borderColor: color,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={{ color, fontWeight: "800" }}>{OUTCOME_ICON[r.outcome]}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: t.text, fontWeight: "700", fontSize: 16 }}>
-                  {r.label}: <Text style={{ color }}>{OUTCOME_LABEL[r.outcome]}</Text>
-                </Text>
-                <Text style={{ color: t.text, fontSize: 15 }}>{r.detail}</Text>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-
-      <H2>Bariery i udogodnienia — skąd to wiemy</H2>
-      <P muted>Każda informacja ma źródło, datę i poziom wiarygodności. Gdy źródła się różnią, pokazujemy wszystkie wersje.</P>
-      <View style={{ gap: 8 }}>
-        {FEATURE_ORDER.map((key) => (
-          <FeatureBlock key={key} featureKey={key} view={a.features[key]} sources={sources} />
-        ))}
-      </View>
-
-      <H2>Dojazd komunikacją miejską</H2>
-      <StopsList stops={loaded.data.stops ?? []} profile={profile} sources={sources} />
-
-      <H2>Na mapie</H2>
-      <PlacesMap results={[{ place, assessment: a }]} height={240} />
-
-      {place.id.startsWith("osm-") && (
-        <>
-          <H2>Aktualność danych z OpenStreetMap</H2>
-          <P muted>Dane OSM są importowane codziennie. Możesz sprawdzić ten obiekt w OSM teraz.</P>
-          <Button
-            variant="secondary"
-            label={checking ? "Sprawdzam…" : "Sprawdź teraz w OpenStreetMap"}
-            disabled={checking}
-            onPress={check}
-          />
-          <View accessibilityLiveRegion="polite" style={{ marginTop: 10 }}>
-            {live?.ok === true && (
-              <Banner
-                tone="info"
-                title={live.changed ? "W OSM są zmiany od ostatniego importu" : "Dane w OSM nie zmieniły się od importu"}
-              >
-                {live.lastEdit ? `Ostatnia edycja obiektu w OSM: ${formatDate(live.lastEdit)}.` : ""}
-              </Banner>
-            )}
-            {live?.ok === false && (
-              <Banner title="Nie udało się połączyć z OpenStreetMap">
-                {`Pokazujemy kopię z ${live.snapshotAt ? formatDate(live.snapshotAt) : "ostatniego importu"}. Nie traktuj jej jako potwierdzenia bieżącego stanu.`}
-              </Banner>
-            )}
-          </View>
-        </>
-      )}
-
-      <H2>Coś się nie zgadza?</H2>
-      <P>Byłeś na miejscu? Uzupełnij to, co wiesz — wystarczy jedno pole. Nie prosimy o imię ani e-mail.</P>
-      <Button label="Zgłoś poprawkę" onPress={() => router.push({ pathname: "/zglos/[id]", params: { id: place.id } })} />
-    </ScrollView>
+    </View>
   );
 }
 
-function FeatureBlock({
+function FeatureRow({
   featureKey,
   view,
   sources,
+  onConfirm,
+  onReport,
 }: {
   featureKey: FeatureKey;
   view?: FeatureView;
   sources: Record<string, Source>;
+  onConfirm: (key: FeatureKey, value: FactValue) => Promise<void>;
+  onReport: () => void;
 }) {
   const t = useTheme();
+  const [sent, setSent] = useState("");
   const label = FEATURE_LABELS[featureKey];
   if (!view) {
     return (
-      <Card style={{ paddingVertical: 10 }}>
-        <Text style={{ color: t.muted, fontSize: 15 }}>
-          <Text style={{ fontWeight: "700" }}>{label}:</Text> brak informacji w żadnym źródle.
-        </Text>
-      </Card>
+      <View style={styles.featureEmpty} accessible accessibilityLabel={`${label}: brak informacji`}>
+        <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>{label}</Text>
+        <Text style={{ color: t.muted, fontSize: 14 }}>brak informacji</Text>
+      </View>
     );
   }
+  const value =
+    view.status === "conflict" ? "sprzeczne dane" : view.value !== undefined ? formatValue(featureKey, view.value) : "";
   return (
-    <Card style={{ gap: 8 }}>
-      <Text accessibilityRole="header" style={{ color: t.text, fontWeight: "700", fontSize: 16 }}>
-        {label}
-      </Text>
-      <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-        {view.status === "confirmed" && <Tag kind="confirmed" label="Potwierdzone przez kilka źródeł" />}
-        {view.status === "conflict" && <Tag kind="conflict" label="Sprzeczne dane" />}
-        {view.stale && <Tag kind="stale" label="Może być nieaktualne" />}
-        {view.unverifiedOnly && <Tag kind="unverified" label="Niezweryfikowane" />}
-      </View>
+    <Disclosure
+      title={label}
+      summary={
+        <View style={{ gap: 6 }}>
+          <Text style={{ color: view.status === "conflict" ? t.bad : t.text, fontSize: 15, fontWeight: "600" }}>
+            {value}
+          </Text>
+          {(view.status === "confirmed" || view.status === "conflict" || view.stale || view.unverifiedOnly) && (
+            <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+              {view.status === "confirmed" && <Tag kind="confirmed" label="Potwierdzone przez kilka źródeł" />}
+              {view.status === "conflict" && <Tag kind="conflict" label="Sprzeczne dane" />}
+              {view.stale && <Tag kind="stale" label="Może być nieaktualne" />}
+              {view.unverifiedOnly && <Tag kind="unverified" label="Niezweryfikowane" />}
+            </View>
+          )}
+        </View>
+      }
+    >
       {view.facts.map((f, i) => {
         const src = sources[f.sourceId];
         return (
-          <View key={i} style={{ borderLeftWidth: 4, borderLeftColor: t.line, paddingLeft: 10, gap: 2 }}>
+          <View key={i} style={[styles.fact, { backgroundColor: t.bg }]}>
             <Text style={{ color: t.text, fontSize: 15 }}>
               <Text style={{ fontWeight: "700" }}>{formatValue(f.key, f.value)}</Text>
               {f.note ? ` — ${f.note}` : ""}
             </Text>
             {f.sample && <Tag kind="sample" label="Dane przykładowe" />}
             <Text style={{ color: t.muted, fontSize: 14 }}>
-              Źródło: {src?.name ?? f.sourceId} · stan na{" "}
-              {f.observedAt ? formatDate(f.observedAt) : "datę nieznaną"}
+              {src?.name ?? f.sourceId} · {f.observedAt ? formatDate(f.observedAt) : "data nieznana"}
             </Text>
             {f.ref && (
               <Text
                 accessibilityRole="link"
                 onPress={() => Linking.openURL(f.ref!)}
-                style={{ color: t.accent, fontSize: 14, textDecorationLine: "underline", paddingVertical: 6 }}
+                style={{ color: t.accent, fontSize: 14, fontWeight: "600", paddingVertical: 6 }}
               >
-                Rekord w źródle
+                Zobacz rekord w źródle →
               </Text>
             )}
           </View>
         );
       })}
-    </Card>
+      {featureKey !== "general" && (
+        <View style={{ gap: 8, paddingBottom: 8 }}>
+          <Text style={{ color: t.text, fontWeight: "700", fontSize: 15 }}>
+            {view.status === "conflict" ? "Byłeś na miejscu? Która wersja jest prawdziwa?" : "Byłeś na miejscu? Czy to nadal aktualne?"}
+          </Text>
+          {sent ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: t.ok, fontWeight: "700" }}>
+              {sent}
+            </Text>
+          ) : (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {(view.status === "conflict"
+                ? [...new Map(view.facts.map((f) => [String(f.value), f.value])).values()]
+                : view.value !== undefined
+                  ? [view.value]
+                  : []
+              ).map((value) => (
+                <Button
+                  key={String(value)}
+                  variant="secondary"
+                  icon="check"
+                  label={view.status === "conflict" ? formatValue(featureKey, value) : "Tak, aktualne"}
+                  onPress={() =>
+                    onConfirm(featureKey, value)
+                      .then(() => setSent("Dziękujemy — potwierdzenie zapisane."))
+                      .catch(() => setSent("Nie udało się zapisać. Spróbuj ponownie."))
+                  }
+                />
+              ))}
+              <Button variant="ghost" icon="pencil-outline" label="Nie, zgłoś zmianę" onPress={onReport} />
+            </View>
+          )}
+        </View>
+      )}
+    </Disclosure>
   );
 }
+
+const styles = StyleSheet.create({
+  hero: { padding: 16, paddingTop: 8, gap: 14, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  verdict: { flexDirection: "row", gap: 12, alignItems: "center", borderRadius: 16, padding: 14 },
+  req: { flexDirection: "row", gap: 12, paddingVertical: 12 },
+  featureEmpty: { flexDirection: "row", alignItems: "center", minHeight: 48, gap: 8 },
+  fact: { borderRadius: 12, padding: 12, gap: 4 },
+  actions: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+});

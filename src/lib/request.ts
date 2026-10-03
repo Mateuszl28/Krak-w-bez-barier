@@ -23,3 +23,9 @@ export function profileFrom(params: URLSearchParams): Profile | undefined {
     avoidCobbles: bool("avoidCobbles", base.avoidCobbles),
   };
 }
+
+/** Identyfikator miasta z zapytania — tylko małe litery i myślnik (to nazwa katalogu w data/). */
+export function cityFrom(params: URLSearchParams): string {
+  const c = params.get("city") ?? "krakow";
+  return /^[a-z-]{2,40}$/.test(c) ? c : "krakow";
+}

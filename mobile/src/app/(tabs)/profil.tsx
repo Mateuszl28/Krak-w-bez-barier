@@ -1,10 +1,9 @@
-import { router } from "expo-router";
 import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { ProfileChips } from "../components/ProfileChips";
-import { Button, Card, H2, P } from "../components/ui";
-import { useProfile } from "../lib/profile";
-import type { Profile } from "../lib/shared";
-import { useTheme } from "../lib/theme";
+import { ProfileTiles } from "../../components/ProfileTiles";
+import { Card, P, SectionTitle } from "../../components/ui";
+import { useProfile } from "../../lib/profile";
+import type { Profile } from "../../lib/shared";
+import { useTheme } from "../../lib/theme";
 
 export default function ProfileScreen() {
   const t = useTheme();
@@ -20,7 +19,7 @@ export default function ProfileScreen() {
         keyboardType="number-pad"
         value={String(value)}
         onChangeText={(s) => onChange(Number(s.replace(/\D/g, "")) || 0)}
-        style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.surface }]}
+        style={[styles.input, { color: t.text, borderColor: t.line, backgroundColor: t.bg }]}
       />
     </View>
   );
@@ -38,8 +37,8 @@ export default function ProfileScreen() {
         Wybierz, czym się poruszasz, albo ustaw własne wymagania. Nie pytamy o niepełnosprawność — wystarczą Twoje
         potrzeby.
       </P>
-      <ProfileChips />
-      <H2>Wymagania</H2>
+      <ProfileTiles />
+      <SectionTitle icon="tune-variant">Szczegółowe wymagania</SectionTitle>
       <Card style={{ gap: 14 }}>
         {num(
           "Najwyższy próg, który pokonam (cm)",
@@ -52,14 +51,13 @@ export default function ProfileScreen() {
         {toggle("Potrzebuję przewijaka", profile.needChangingTable, (b) => update({ needChangingTable: b }))}
         {toggle("Unikam bruku i żwiru na dojściu", profile.avoidCobbles, (b) => update({ avoidCobbles: b }))}
       </Card>
-      <P muted>Ustawienia zapisują się tylko na tym telefonie.</P>
-      <Button label="Gotowe" onPress={() => router.back()} />
+      <P muted>Ustawienia zapisują się tylko na tym telefonie. Zmiana działa od razu na liście, mapie i kartach miejsc.</P>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   label: { fontSize: 16, fontWeight: "700" },
-  input: { minHeight: 48, borderWidth: 2, borderRadius: 10, paddingHorizontal: 12, fontSize: 16 },
+  input: { minHeight: 50, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, fontSize: 16 },
   row: { flexDirection: "row", alignItems: "center", minHeight: 48, gap: 12 },
 });

@@ -1,0 +1,8 @@
+{
+  "id": "warszawa",
+  "name": "Warszawa",
+  "center": [52.2297, 21.0122],
+  "zoom": 15,
+  "bbox": [52.215, 20.975, 52.26, 21.045],
+  "sources": ["osm", "user_reports"]
+}

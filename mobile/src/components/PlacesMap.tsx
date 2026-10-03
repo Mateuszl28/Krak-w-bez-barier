@@ -2,20 +2,17 @@ import { router } from "expo-router";
 import { useMemo } from "react";
 import { View } from "react-native";
 import { WebView } from "react-native-webview";
-import { VERDICT_TEXT, type Assessment, type Place } from "../lib/shared";
+import type { Assessed } from "../lib/search";
+import { VERDICT_TEXT } from "../lib/shared";
 import { useTheme } from "../lib/theme";
 import { VERDICT_ICON } from "./ui";
 
-export interface Assessed {
-  place: Place;
-  assessment: Assessment;
-}
 
 const PIN: Record<string, string> = { meets: "#0b6b2e", barrier: "#a4161a", incomplete: "#6b4a00" };
 
 // Mapa OpenStreetMap (Leaflet w WebView) — bez kluczy API i zależności od Google.
 // Jest dodatkiem: te same informacje są w liście i na karcie miejsca.
-export function PlacesMap({ results, height = 420 }: { results: Assessed[]; height?: number }) {
+export function PlacesMap({ results, height = 420 }: { results: Assessed[]; height?: number | "100%" }) {
   const t = useTheme();
   const html = useMemo(() => {
     const points = results.map(({ place, assessment }) => ({
@@ -54,7 +51,11 @@ if(b.length>1)map.fitBounds(b,{padding:[30,30],maxZoom:17});else if(b.length===1
 
   return (
     <View
-      style={{ height, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: t.line }}
+      style={
+        height === "100%"
+          ? { flex: 1 }
+          : { height, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: t.line }
+      }
       accessibilityLabel="Mapa miejsc. Te same informacje są dostępne w liście."
     >
       <WebView

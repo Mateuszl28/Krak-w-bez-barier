@@ -18,6 +18,10 @@ const light = {
   unkBg: "#fdf1d6",
   infoBg: "#e6eefa",
   sample: "#5b2a86",
+  hero: "#0a4fa8",
+  heroText: "#ffffff",
+  heroMuted: "#d6e4fb",
+  shadow: "#0b1a33",
 };
 
 const dark: typeof light = {
@@ -37,6 +41,10 @@ const dark: typeof light = {
   unkBg: "#33280c",
   infoBg: "#17243a",
   sample: "#c9a3f0",
+  hero: "#0d2a52",
+  heroText: "#ffffff",
+  heroMuted: "#b9cdee",
+  shadow: "#000000",
 };
 
 export type Theme = typeof light;
