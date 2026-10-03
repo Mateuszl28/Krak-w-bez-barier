@@ -64,6 +64,8 @@ export interface Place {
   facts: Fact[];
   /** Miejsce wymyślone/uzupełnione na potrzeby demo. */
   sample?: boolean;
+  /** Identyfikatory tego samego obiektu w innych źródłach (np. OSM), połączone z tym wpisem. */
+  mergedIds?: string[];
 }
 
 export interface SourceStatus {

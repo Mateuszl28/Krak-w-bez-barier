@@ -1,22 +1,5 @@
 {
   "sourceId": "user_reports",
-  "note": "DANE PRZYKŁADOWE przygotowane na potrzeby demonstracji.",
-  "reports": [
-    {
-      "id": "seed-1",
-      "placeId": "demo-cafe",
-      "sample": true,
-      "createdAt": "2026-09-20",
-      "facts": { "entrance": "steps", "step_count": 2 },
-      "comment": "Po remoncie podjazd zniknął, przy wejściu są 2 stopnie."
-    },
-    {
-      "id": "seed-2",
-      "placeId": "demo-hotel",
-      "sample": true,
-      "createdAt": "2026-09-28",
-      "facts": { "door_width_cm": 92 },
-      "comment": "Zmierzyłem drzwi wejściowe — ok. 92 cm."
-    }
-  ]
+  "note": "Zgłoszenia użytkowników przychodzą przez formularz na karcie miejsca (POST /api/reports).",
+  "reports": []
 }

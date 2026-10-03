@@ -206,6 +206,10 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
     return { fetchedAt: official.fetchedAt, records: official.places.length + official.parking.length };
   });
 
+  // Ten sam obiekt w dwóch źródłach (np. toaleta w danych miasta i w OSM) łączymy w
+  // jeden — dzięki temu widać, gdzie źródła się potwierdzają, a gdzie są sprzeczne.
+  mergeDuplicates(byId);
+
   await load("owner_declarations", async () => {
     const file = await readJson<{ declarations: Declaration[] }>(path.join(dir, "owner-declarations.json"));
     for (const d of file.declarations) {
@@ -265,7 +269,7 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
       const k = cell(s.lat, s.lon);
       grid.set(k, [...(grid.get(k) ?? []), s]);
     }
-    for (const place of byId.values()) {
+    for (const place of new Set(byId.values())) {
       const cy = Math.floor(place.lat * 200);
       const cx = Math.floor(place.lon * 130);
       let best: { spot: ParkingSpot; d: number } | undefined;
@@ -287,8 +291,39 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
     }
   }
 
-  const places = [...byId.values()];
+  // byId zawiera też aliasy (identyfikatory OSM połączonych obiektów) — lista bez powtórzeń.
+  const places = [...new Set(byId.values())];
   return { config, places, byId, stops, status };
+}
+
+const MERGE_RADIUS_M = 25;
+const MERGE_CATEGORIES = new Set<Category>(["toilet"]);
+
+/**
+ * Łączy obiekty z danych miejskich z odpowiadającymi im obiektami OSM (ta sama
+ * kategoria, do 25 m). Obiekt miejski przejmuje fakty z OSM; identyfikator OSM
+ * nadal wskazuje na połączony obiekt, więc stare linki działają.
+ */
+export function mergeDuplicates(byId: Map<string, Place>): number {
+  const all = [...byId.values()];
+  const official = all.filter((p) => p.id.startsWith("krk-") && MERGE_CATEGORIES.has(p.category));
+  const osm = all.filter((p) => p.id.startsWith("osm-") && MERGE_CATEGORIES.has(p.category));
+  const used = new Set<string>();
+  let merged = 0;
+  for (const o of official) {
+    const match = osm
+      .filter((p) => !used.has(p.id) && p.category === o.category)
+      .map((p) => ({ p, d: distanceM([o.lat, o.lon], [p.lat, p.lon]) }))
+      .filter((x) => x.d <= MERGE_RADIUS_M)
+      .sort((a, b) => a.d - b.d)[0];
+    if (!match) continue;
+    used.add(match.p.id);
+    o.facts.push(...match.p.facts);
+    o.mergedIds = [...(o.mergedIds ?? []), match.p.id];
+    byId.set(match.p.id, o);
+    merged++;
+  }
+  return merged;
 }
 
 /** Wyszukiwanie bez polskich znaków i wielkości liter. */
@@ -308,6 +343,8 @@ export function distanceM(a: [number, number], b: [number, number]): number {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
+
+const BROWSE_ORDER: Category[] = ["attraction", "culture", "accommodation", "food", "toilet", "office", "health", "transport", "shop"];
 
 export interface SearchOptions {
   q?: string;
@@ -332,8 +369,24 @@ export function search(places: Place[], opts: SearchOptions): Place[] {
       if (sa !== sb) return sa - sb;
     }
     if (near) return distanceM(near, [a.lat, a.lon]) - distanceM(near, [b.lat, b.lon]);
+    // Bez zapytania: najpierw to, po co ludzie przyjeżdżają (atrakcje, kultura), potem reszta.
+    if (!q && !opts.category) {
+      // Miejsca z informacjami o dostępności przed tymi, o których nic nie wiemy.
+      const known = (p: Place) => (p.facts.some((f) => f.key !== "parking") ? 0 : 1);
+      if (known(a) !== known(b)) return known(a) - known(b);
+      const rank = (p: Place) => {
+        const i = BROWSE_ORDER.indexOf(p.category);
+        return i === -1 ? BROWSE_ORDER.length : i;
+      };
+      if (rank(a) !== rank(b)) return rank(a) - rank(b);
+    }
     return b.facts.length - a.facts.length;
   });
+  if (!q && !opts.category && !near) {
+    // Lista startowa: jedna pozycja na nazwę (OSM często ma kilka obiektów o tej samej nazwie).
+    const seen = new Set<string>();
+    result = result.filter((p) => (seen.has(p.name) ? false : (seen.add(p.name), true)));
+  }
   return result.slice(0, opts.limit ?? 50);
 }
 

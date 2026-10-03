@@ -163,3 +163,21 @@ test("asystent awaryjny: rozpoznanie potrzeb, startu i celu", async () => {
   assert.equal(c.from, "Teatr Bagatela");
   assert.equal(c.to, "Sukiennice");
 });
+
+test("ten sam obiekt z danych miasta i OSM łączy się w jeden — sprzeczność widoczna", async () => {
+  const { mergeDuplicates } = await import("./repository.ts");
+  const city: Place = {
+    id: "krk-wc-1", name: "Toaleta", category: "toilet", lat: 50.06, lon: 19.94,
+    facts: [fact({ key: "toilet", value: true, sourceId: "krakow_open_data" })],
+  };
+  const osm: Place = {
+    id: "osm-n1", name: "Toaleta publiczna", category: "toilet", lat: 50.06005, lon: 19.94005,
+    facts: [fact({ key: "toilet", value: false, sourceId: "osm" })],
+  };
+  const far: Place = { id: "osm-n2", name: "Toaleta publiczna", category: "toilet", lat: 50.07, lon: 19.94, facts: [] };
+  const byId = new Map([city, osm, far].map((p) => [p.id, p]));
+  assert.equal(mergeDuplicates(byId), 1);
+  assert.equal(byId.get("osm-n1"), city);
+  assert.notEqual(byId.get("osm-n2"), city);
+  assert.equal(viewFeature("toilet", city.facts, SOURCES, NOW).status, "conflict");
+});

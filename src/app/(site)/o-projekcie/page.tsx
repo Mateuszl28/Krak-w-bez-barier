@@ -88,10 +88,6 @@ export default async function About() {
           <span className="tag conflict">Sprzeczne dane</span> — źródła się różnią; pokazujemy wszystkie wersje i nie
           wybieramy za użytkownika.
         </li>
-        <li>
-          <span className="tag sample">Dane przykładowe</span> — dane przygotowane do demonstracji, nieopisujące
-          rzeczywistego stanu.
-        </li>
       </ul>
 
       <h2 id="ocena">Jak powstaje ocena</h2>
@@ -119,7 +115,8 @@ export default async function About() {
         pokazuje jej datę. Gdy źródła nie da się wczytać wcale, użytkownik widzi komunikat, że część informacji jest
         niedostępna — miejsca nie są wtedy pokazywane jako „bez barier”. Demonstracja:{" "}
         <a href="/?awaria=osm">wyszukiwarka bez OpenStreetMap</a>,{" "}
-        <a href="/miejsce/demo-cafe">sprzeczne dane i nieaktualna deklaracja</a>,{" "}
+        <a href="/miejsce/krk-wc-11">sprzeczne dane (toaleta przy pętli Rakowicka: miasto „dostępna”, OSM
+        „niedostępna”)</a>, <a href="/miejsce/krk-wc-12">potwierdzenie przez dwa źródła (Park Zaczarowanej Dorożki)</a>,{" "}
         <a href="/miejsce/krk-wc-2">dane miejskie starsze niż 2 lata</a>.
       </p>
 

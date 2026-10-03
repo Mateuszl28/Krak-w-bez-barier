@@ -42,6 +42,9 @@ export function categoryOf(t: Record<string, string>): Category {
   if (["pharmacy", "hospital", "clinic", "doctors", "dentist"].includes(a)) return "health";
   if (["museum", "gallery"].includes(t.tourism)) return "culture";
   if (["hotel", "hostel", "guest_house", "apartment", "motel"].includes(t.tourism)) return "accommodation";
+  // Pomniki, rzeźby i kapliczki to nie cele wizyty — nie mieszamy ich z atrakcjami.
+  const minorHistoric = ["memorial", "monument", "wayside_shrine", "wayside_cross", "boundary_stone", "milestone", "tomb"];
+  if (t.tourism === "artwork" || minorHistoric.includes(t.historic)) return "other";
   if (["attraction", "viewpoint", "zoo", "theme_park"].includes(t.tourism) || t.historic) return "attraction";
   if (t.public_transport === "station" || t.railway === "station" || a === "bus_station") return "transport";
   if (t.shop) return "shop";

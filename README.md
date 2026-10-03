@@ -51,7 +51,7 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
   Brak informacji **nigdy** nie jest traktowany jako potwierdzenie dostępności.
 - Karta miejsca: wynik dla każdego wymagania + wszystkie informacje ze źródłem, datą i linkiem do rekordu.
 - Oznaczenia: potwierdzone przez kilka źródeł, niezweryfikowane (zgłoszenia), może być nieaktualne (> 2 lata),
-  sprzeczne dane (pokazujemy wszystkie wersje), dane przykładowe.
+  sprzeczne dane (pokazujemy wszystkie wersje).
 - Zgłaszanie poprawek (anonimowe, walidowane, z limitem) — widoczne od razu jako niezweryfikowane.
 - **„Czy to nadal aktualne?”** przy każdej informacji: odwiedzający potwierdza jednym dotknięciem albo — przy
   sprzecznych danych — wskazuje prawdziwą wersję. Potwierdzenie z niezależnego źródła daje status „potwierdzone”.
@@ -116,9 +116,12 @@ bez ręcznego utrzymywania bazy. Każde źródło jest osobnym krokiem; awaria j
 wczytać, aplikacja to komunikuje i nie pokazuje miejsc jako „bez barier”. Demo: `/?awaria=osm`,
 `/miejsce/<id>?awaria=osm`.
 
-**Dane przykładowe.** Dwa fikcyjne obiekty (`demo-hotel`, `demo-cafe`) i dwa zgłoszenia służą do pokazania
-deklaracji właściciela, potwierdzenia przez kilka źródeł, konfliktu i nieaktualnych danych. Są wyraźnie oznaczone w
-interfejsie i w plikach.
+**Tylko realne obiekty.** Aplikacja nie zawiera fikcyjnych miejsc ani zmyślonych danych. Konflikty i
+potwierdzenia pokazujemy na prawdziwych danych: ten sam obiekt w danych miejskich i w OSM łączymy w jeden
+(28 z 50 toalet publicznych ma odpowiednik w OSM). Przykłady: `/miejsce/krk-wc-11` — sprzeczne dane (miasto:
+toaleta dostępna, OSM: niedostępna), `/miejsce/krk-wc-7` — sprzeczne dane o przewijaku w Sukiennicach,
+`/miejsce/krk-wc-12` — dostępność i przewijak potwierdzone przez dwa źródła. Oznaczanie danych przykładowych
+pozostaje w kodzie na wypadek ich użycia (np. w szkoleniach), ale nie jest używane.
 
 ## Architektura
 

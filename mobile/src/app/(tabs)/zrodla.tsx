@@ -41,8 +41,6 @@ export default function SourcesScreen() {
         <P>{s.trustStale}</P>
         <Tag kind="conflict" label={s.tagConflict} />
         <P>{s.trustConflict}</P>
-        <Tag kind="sample" label={s.tagSample} />
-        <P>{s.trustSample}</P>
       </View>
 
       <SectionTitle icon="lock-outline">{s.privacy}</SectionTitle>

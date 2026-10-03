@@ -17,12 +17,12 @@ export default function ForBusiness() {
         źródłem i datą, działa bez JavaScriptu i jest zgodna z czytnikami ekranu.
       </p>
       <pre>
-        {`<iframe src="https://<adres-aplikacji>/widget/demo-hotel"
+        {`<iframe src="https://<adres-aplikacji>/widget/osm-w23256528"
         title="Dostępność obiektu" width="100%" height="520"
         style="border:0"></iframe>`}
       </pre>
       <p>
-        <a href="/widget/demo-hotel">Zobacz przykładowy widżet</a> (obiekt fikcyjny, dane przykładowe).
+        <a href="/widget/osm-w23256528">Zobacz widżet dla Sukiennic</a> — na danych z OpenStreetMap i danych miejskich.
       </p>
 
       <h2>2. Deklaracja właściciela</h2>
