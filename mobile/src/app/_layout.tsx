@@ -19,6 +19,7 @@ export default function RootLayout() {
               headerTitleStyle: { color: t.heroText, fontWeight: "700" },
               contentStyle: { backgroundColor: t.bg },
               headerBackTitle: "Wróć",
+              headerShadowVisible: false,
             }}
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

@@ -120,9 +120,16 @@ export function PlaceDetail({
 
       <h2>Dla właściciela obiektu</h2>
       <p>
-        Prowadzisz to miejsce? Uzupełnij deklarację dostępności — pojawi się jako „Deklaracja właściciela” z datą, a
-        kartę możesz osadzić na swojej stronie:{" "}
-        <a href={`/widget/${place.id}`}>podgląd widżetu</a> · <a href="/dla-firm">jak to działa</a>.
+        Prowadzisz to miejsce? Opisz jego dostępność — deklaracja pojawi się na karcie z datą, a kartę możesz osadzić
+        na swojej stronie.
+      </p>
+      <p>
+        <a className="button" href={`/dla-firm/deklaracja/${place.id}`}>
+          Wypełnij deklarację dostępności
+        </a>{" "}
+        <a className="button secondary" href={`/widget/${place.id}`}>
+          Podgląd widżetu
+        </a>
       </p>
     </>
   );

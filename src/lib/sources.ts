@@ -33,6 +33,16 @@ export const SOURCES: Record<string, Source> = {
     description:
       "Informacje przekazane przez zarządcę obiektu (hotel, muzeum, organizator wydarzenia) przez formularz lub plik accessibility.json na jego stronie.",
   },
+  owner_pending: {
+    id: "owner_pending",
+    name: "Deklaracje właścicieli — oczekujące na weryfikację",
+    kind: "user_report",
+    url: "/dla-firm",
+    license: "CC BY 4.0",
+    updateFrequency: "Na bieżąco",
+    description:
+      "Deklaracja przysłana formularzem przez osobę reprezentującą obiekt. Do czasu weryfikacji (np. kontakt z obiektem, zdjęcia, potwierdzenie przez odwiedzających) traktowana jak informacja niezweryfikowana.",
+  },
   user_reports: {
     id: "user_reports",
     name: "Zgłoszenia użytkowników",

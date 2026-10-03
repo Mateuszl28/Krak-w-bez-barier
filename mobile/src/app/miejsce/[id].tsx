@@ -22,7 +22,7 @@ import {
   shadow,
   verdictColors,
 } from "../../components/ui";
-import { getPlace, liveCheck, sendReport, type LiveResult, type Loaded, type PlaceResponse } from "../../lib/api";
+import { API_URL, getPlace, liveCheck, sendReport, type LiveResult, type Loaded, type PlaceResponse } from "../../lib/api";
 import { useProfile } from "../../lib/profile";
 import {
   CATEGORY_LABELS,
@@ -205,6 +205,17 @@ export default function PlaceScreen() {
 
           <SectionTitle icon="map-marker-radius">Na mapie</SectionTitle>
           <PlacesMap results={[{ place, assessment: a }]} height={220} />
+
+          <SectionTitle icon="storefront-outline">Prowadzisz to miejsce?</SectionTitle>
+          <P>
+            Opisz dostępność obiektu — deklaracja pojawi się tu z datą, a kartę możesz osadzić na swojej stronie.
+          </P>
+          <Button
+            variant="secondary"
+            icon="file-document-edit-outline"
+            label="Wypełnij deklarację dostępności"
+            onPress={() => Linking.openURL(`${API_URL}/dla-firm/deklaracja/${place.id}`)}
+          />
 
           {place.id.startsWith("osm-") && (
             <>

@@ -51,6 +51,13 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - Oznaczenia: potwierdzone przez kilka źródeł, niezweryfikowane (zgłoszenia), może być nieaktualne (> 2 lata),
   sprzeczne dane (pokazujemy wszystkie wersje), dane przykładowe.
 - Zgłaszanie poprawek (anonimowe, walidowane, z limitem) — widoczne od razu jako niezweryfikowane.
+- **„Czy to nadal aktualne?”** przy każdej informacji: odwiedzający potwierdza jednym dotknięciem albo — przy
+  sprzecznych danych — wskazuje prawdziwą wersję. Potwierdzenie z niezależnego źródła daje status „potwierdzone”.
+- **Deklaracja właściciela obiektu** (`/dla-firm/deklaracja/<id>`): formularz dla hotelu, muzeum, organizatora.
+  Do czasu weryfikacji pokazywana jako „oczekująca na weryfikację” (niezweryfikowana), po wysłaniu — gotowy kod
+  widżetu do osadzenia.
+- **Wiele miast:** Kraków (OSM + dane ZTP) i Warszawa (OSM, 7258 miejsc) — drugie miasto dodane wyłącznie plikiem
+  `data/warszawa/city.json` i importem, bez zmian w kodzie. Wybór miasta w aplikacji, `GET /api/v1/cities`.
 - Sprawdzenie obiektu na żywo w OpenStreetMap z obsługą niedostępności źródła.
 - Widżet do osadzenia na stronie hotelu / wydarzenia (`/widget/<id>`, działa bez JavaScriptu).
 - Publiczne API z oceną dopasowania (`/api/v1/places`).
@@ -68,7 +75,7 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 | Otwarte dane Krakowa — ZTP: [Toalety publiczne](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Toalety_publiczne_4/FeatureServer/0) | 50 toalet: dostępność, sposób wjazdu (poziom 0 / platforma / winda / schodołaz), przewijak, godziny | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Otwarte dane Krakowa — ZTP: [Miejsca postojowe OzN](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Miejsca_postojowe_OZN/FeatureServer/0) | 2037 miejsc postojowych; przypisujemy je miejscom w promieniu 150 m | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Otwarte dane Krakowa — ZTP: [Przystanki KMK](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Przystanki_Komunikacji_Miejskiej_w_Krakowie/FeatureServer/0) | 3756 przystanków: krawężnik peronowy (Kassel / zwykły / brak), nawierzchnia peronu, wiaty, ławki | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
-| Deklaracje właścicieli | szczegółowe dane od zarządcy obiektu | formularz / `accessibility.json` | CC BY 4.0 |
+| Deklaracje właścicieli | szczegółowe dane od zarządcy obiektu (zweryfikowane / oczekujące na weryfikację) | formularz `/dla-firm/deklaracja/<id>` / `accessibility.json` | CC BY 4.0 |
 | Zgłoszenia użytkowników | obserwacje odwiedzających | formularz na karcie miejsca | CC BY 4.0 |
 
 Sprawdzone, ale nieużyte: GTFS ZTP (pola `wheelchair_boarding` / `wheelchair_accessible` są puste), dane.gov.pl

@@ -71,6 +71,37 @@ export async function addReport(report: Report): Promise<void> {
   cache.clear();
 }
 
+// Deklaracje właścicieli przysłane formularzem — do czasu weryfikacji osobne,
+// niezweryfikowane źródło.
+const DECLARATIONS_FILE = process.env.VERCEL
+  ? "/tmp/kbb-declarations.json"
+  : path.join(DATA_DIR, "cache", "declarations.json");
+
+export interface PendingDeclaration {
+  id: string;
+  placeId: string;
+  organization: string;
+  declaredAt: string;
+  facts: Partial<Record<FeatureKey, FactValue>>;
+  notes?: string;
+}
+
+async function readPendingDeclarations(): Promise<PendingDeclaration[]> {
+  try {
+    return await readJson<PendingDeclaration[]>(DECLARATIONS_FILE);
+  } catch {
+    return [];
+  }
+}
+
+export async function addDeclaration(d: PendingDeclaration): Promise<void> {
+  const all = await readPendingDeclarations();
+  all.push(d);
+  await mkdir(path.dirname(DECLARATIONS_FILE), { recursive: true });
+  await writeFile(DECLARATIONS_FILE, JSON.stringify(all, null, 2));
+  cache.clear();
+}
+
 function toFacts(
   facts: Partial<Record<FeatureKey, FactValue>>,
   sourceId: string,
@@ -164,6 +195,17 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
       );
     }
     return { records: file.declarations.length };
+  });
+
+  await load("owner_pending", async () => {
+    const pending = await readPendingDeclarations();
+    for (const d of pending) {
+      const place = byId.get(d.placeId);
+      if (!place) continue;
+      const note = [`${d.organization} — oczekuje na weryfikację`, d.notes].filter(Boolean).join(" — ");
+      place.facts.push(...toFacts(d.facts, "owner_pending", d.declaredAt, { note }));
+    }
+    return { records: pending.length };
   });
 
   await load("user_reports", async () => {
