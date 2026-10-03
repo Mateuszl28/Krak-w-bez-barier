@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Kraków bez barier",
+    "slug": "krakow-bez-barier",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pl.krakowbezbarier.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a4fa8",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "pl.krakowbezbarier.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Lokalizacja pozwala pokazać najbliższe miejsca. Nie jest nigdzie zapisywana."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "scheme": "bezbarier",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

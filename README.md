@@ -16,6 +16,33 @@ przewijak, unikanie bruku). Profil zapisuje się wyłącznie w przeglądarce.
 Główny scenariusz: wybierz profil → wyszukaj miejsce (nazwa, adres, kategoria, „najbliższe mnie”) → zobacz ocenę
 każdego wymagania i szczegóły ze źródłami → zgłoś poprawkę, jeśli coś się nie zgadza.
 
+## Aplikacja mobilna
+
+Główną formą rozwiązania jest **aplikacja mobilna na Androida i iOS** (`mobile/`, Expo + React Native). Korzysta z tego
+samego modelu danych i tej samej logiki oceny co serwer (`src/lib` jest współdzielone), a dane pobiera z API backendu.
+
+- Profil potrzeb zapisywany tylko na telefonie, wyszukiwanie, „najbliższe mnie” (GPS), lista i mapa OSM.
+- Karta miejsca z oceną wymagań, źródłami i datami, przycisk „Prowadź do miejsca” (otwiera nawigację w telefonie).
+- Zgłaszanie poprawek, sprawdzenie obiektu na żywo w OSM.
+- Offline: ostatnio pobrane wyniki są zapisywane na telefonie i pokazywane z datą i ostrzeżeniem.
+- Tryb demonstracyjny awarii źródła (ekran „Źródła i metoda”).
+- Dostępność: role i etykiety dla TalkBack/VoiceOver, skalowanie tekstu systemowego, cele dotykowe ≥ 48 dp, tryb ciemny.
+
+Uruchomienie na telefonie z Androidem podłączonym przez USB:
+
+```bash
+npm run build && npx next start -p 3100     # backend (API + dane)
+adb reverse tcp:3100 tcp:3100               # telefon widzi backend pod localhost:3100
+cd mobile && npm install
+npx expo prebuild --platform android
+cd android && ./gradlew assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Adres backendu w buildzie produkcyjnym ustawia się zmienną `EXPO_PUBLIC_API_URL`.
+
+Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwuje widżet dla firm oraz wersję webową.
+
 ## Co działa
 
 - Wyszukiwarka miejsc z oceną dopasowania do profilu: **spełnia / bariery / niepełne dane**.
