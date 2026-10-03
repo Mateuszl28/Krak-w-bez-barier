@@ -2,7 +2,14 @@
 // wyłącznie z naszych narzędzi — wyszukiwarki miejsc, przystanków i oceny tras.
 // Model nie ma własnej wiedzy o dostępności; wszystko, co mówi, pochodzi z danych.
 
-import { GoogleGenAI, createPartFromFunctionResponse, type Content, type FunctionDeclaration } from "@google/genai";
+import {
+  ApiError,
+  GoogleGenAI,
+  createPartFromFunctionResponse,
+  type Content,
+  type FunctionDeclaration,
+  type GenerateContentResponse,
+} from "@google/genai";
 import { assess, assessStop } from "./assess.ts";
 import type { Locale } from "./i18n.ts";
 import { LABELS, PRESETS } from "./labels.ts";
@@ -11,7 +18,10 @@ import { distanceM, loadCity, nearbyStops, normalize, search, type CityData } fr
 import { planRoute } from "./routing.ts";
 import { SOURCES } from "./sources.ts";
 
-export const ASSISTANT_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
+export const ASSISTANT_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+// Zapasowe modele z osobnymi limitami darmowego planu (przełączenie przy 429 na starcie pytania).
+const FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+const MAX_WAIT_S = 22;
 const MAX_STEPS = 8;
 
 type LatLon = [number, number];
@@ -39,6 +49,8 @@ export interface AssistantResult {
   profile?: Profile;
   places: { id: string; name: string }[];
   toolCalls: string[];
+  /** Model, który udzielił odpowiedzi. */
+  model?: string;
 }
 
 const CATEGORIES: Category[] = [
@@ -146,14 +158,16 @@ function systemInstruction(req: AssistantRequest, cityName: string): string {
   const lang = req.locale === "en" ? "English" : "Polish";
   return [
     `You are the trip assistant of "Kraków bez barier" for ${cityName}. You help wheelchair users and parents with strollers check whether a place or a walking route fits their needs.`,
-    `Answer in ${lang}, briefly and concretely (max ~120 words), in plain text without Markdown tables.`,
+    `Answer in ${lang}, briefly and concretely (max ~120 words), in plain text: no Markdown (no **, #, tables); use "•" for lists.`,
     "Rules:",
-    "- All facts about accessibility must come from the tools. Never invent barriers, facilities, distances or opening hours.",
+    "- Every fact must come from a tool result in this conversation. Do not add anything from your own knowledge: no street names, route descriptions, landmarks, opening hours, prices or physical details that the tools did not return.",
+    "- A general rating like 'accessible' from OpenStreetMap is only a general rating — say so, and do not turn it into specific claims (e.g. about the entrance level).",
     "- Missing data is never a confirmation of accessibility. Say clearly what is unknown or unverified, and when sources conflict.",
     "- Mention the key barriers and facilities (steps, kerbs, surface, door width, toilet) and the source with its date for the most important facts.",
     "- If the user describes their needs, call set_requirements first. Never ask about disability or diagnoses — only practical needs.",
     "- To plan a route: find the destination (search_places), find the start (search_stops / search_places, or the user's location if shared), then call plan_route.",
     "- If something is ambiguous (e.g. several places with the same name), ask one short clarifying question.",
+    "- Call independent tools together in the same turn (e.g. set_requirements, search_stops and search_places at once) to answer quickly.",
     "- Data marked as sample (demo) must be described as sample data.",
     `Current requirements: ${JSON.stringify(req.profile)}. User location shared: ${req.location ? "yes" : "no"}.`,
   ].join("\n");
@@ -311,6 +325,20 @@ class Tools {
 
 export class AssistantUnavailable extends Error {}
 
+/** Limit zapytań dostawcy AI (np. darmowy plan Gemini). */
+export class AssistantRateLimited extends Error {
+  constructor(readonly retryAfterS: number) {
+    super("rate limited");
+  }
+}
+
+function retryDelayS(err: ApiError): number {
+  const m = err.message.match(/retry in (\d+(?:\.\d+)?)s/i) ?? err.message.match(/"retryDelay":"(\d+)s"/);
+  return m ? Math.ceil(Number(m[1])) : 30;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function askAssistant(req: AssistantRequest): Promise<AssistantResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new AssistantUnavailable("GEMINI_API_KEY nie jest ustawiony");
@@ -324,23 +352,50 @@ export async function askAssistant(req: AssistantRequest): Promise<AssistantResu
   ];
   const toolCalls: string[] = [];
 
+  const models = [ASSISTANT_MODEL, ...FALLBACK_MODELS.filter((m) => m !== ASSISTANT_MODEL)];
+  let model = models[0];
+  const generate = async (step: number): Promise<GenerateContentResponse> => {
+    const call = () =>
+      ai.models.generateContent({
+        model,
+        contents,
+        config: {
+          systemInstruction: systemInstruction(req, city.config.name),
+          tools: [{ functionDeclarations: DECLARATIONS }],
+        },
+      });
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await call();
+      } catch (err) {
+        // 429 = limit zapytań, 503 = chwilowe przeciążenie modelu u dostawcy.
+        if (!(err instanceof ApiError) || (err.status !== 429 && err.status !== 503)) throw err;
+        // Na starcie pytania przełączamy model; w trakcie (historia ma sygnatury
+        // rozumowania danego modelu) czekamy na zwolnienie limitu.
+        const next = step === 0 ? models[models.indexOf(model) + 1] : undefined;
+        if (next) {
+          model = next;
+          continue;
+        }
+        const wait = err.status === 503 ? 3 : retryDelayS(err);
+        if (attempt > 0 || wait > MAX_WAIT_S) throw new AssistantRateLimited(wait);
+        await sleep(wait * 1000);
+      }
+    }
+  };
+
   for (let step = 0; step < MAX_STEPS; step++) {
-    const response = await ai.models.generateContent({
-      model: ASSISTANT_MODEL,
-      contents,
-      config: {
-        systemInstruction: systemInstruction(req, city.config.name),
-        tools: [{ functionDeclarations: DECLARATIONS }],
-      },
-    });
+    const response = await generate(step);
     const calls = response.functionCalls ?? [];
     if (calls.length === 0) {
       return {
-        reply: response.text ?? "",
+        // Aplikacja wyświetla zwykły tekst — usuwamy ewentualne znaczniki Markdown.
+        reply: (response.text ?? "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#+\s*/gm, ""),
         route: tools.route,
         profile: tools.profileChanged ? tools.profile : undefined,
         places: [...tools.places].map(([id, name]) => ({ id, name })),
         toolCalls,
+        model,
       };
     }
     // Pełna treść modelu (z sygnaturami rozumowania) wraca do historii bez zmian.

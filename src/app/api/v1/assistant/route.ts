@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AssistantUnavailable, askAssistant, type AssistantTurn } from "@/lib/assistant";
+import { AssistantRateLimited, AssistantUnavailable, askAssistant, type AssistantTurn } from "@/lib/assistant";
 import { DEFAULT_PROFILE } from "@/lib/labels";
 import type { Profile } from "@/lib/model";
 import { rateLimiter, validCity } from "@/lib/validate";
@@ -59,6 +59,18 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof AssistantRateLimited) {
+      const en = body?.lang === "en";
+      return NextResponse.json(
+        {
+          error: en
+            ? `The AI assistant has reached the free-plan request limit. Try again in about ${err.retryAfterS} s — search and route checks work as usual.`
+            : `Asystent AI wyczerpał limit zapytań darmowego planu. Spróbuj za ok. ${err.retryAfterS} s — wyszukiwarka i ocena tras działają normalnie.`,
+          retryAfterS: err.retryAfterS,
+        },
+        { status: 429, headers: { "retry-after": String(err.retryAfterS) } },
+      );
+    }
     if (err instanceof AssistantUnavailable) {
       return NextResponse.json(
         { error: "Asystent AI nie jest skonfigurowany na tym serwerze (brak klucza Gemini)." },
