@@ -1,5 +1,5 @@
-import { ScrollView, Switch, Text, View } from "react-native";
-import { Card, P, SectionTitle, Tag } from "../../components/ui";
+import { ScrollView, Text, View } from "react-native";
+import { Card, P, SectionTitle, SwitchRow, Tag } from "../../components/ui";
 import { API_URL } from "../../lib/api";
 import { useProfile } from "../../lib/profile";
 import { SOURCES } from "../../lib/shared";
@@ -50,14 +50,7 @@ export default function SourcesScreen() {
 
       <SectionTitle icon="flask-outline">{s.demo}</SectionTitle>
       <Card style={{ gap: 6 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", minHeight: 48, gap: 12 }}>
-          <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>{s.simulateOutage}</Text>
-          <Switch
-            accessibilityLabel={s.simulateOutage}
-            value={awaria === "osm"}
-            onValueChange={(on) => setAwaria(on ? "osm" : "")}
-          />
-        </View>
+        <SwitchRow label={s.simulateOutage} value={awaria === "osm"} onChange={(on) => setAwaria(on ? "osm" : "")} />
         <Text style={{ color: t.muted, fontSize: 14 }}>{s.simulateHint}</Text>
         <Text style={{ color: t.muted, fontSize: 14 }}>{s.server(API_URL)}</Text>
       </Card>

@@ -1,6 +1,6 @@
 import { assessStop } from "@/lib/assess";
 import { formatDate } from "@/lib/labels";
-import type { NearbyStop, Profile, Source } from "@/lib/model";
+import type { NearbyStop, Place, Profile, Source } from "@/lib/model";
 import { OUTCOME_ICON, OUTCOME_LABEL, VerdictBadge } from "./Verdict";
 
 const MODE: Record<NearbyStop["mode"], string> = { bus: "autobus", tram: "tramwaj", bus_tram: "autobus i tramwaj" };
@@ -10,10 +10,12 @@ export function StopsSection({
   stops,
   profile,
   sources,
+  place,
 }: {
   stops: NearbyStop[];
   profile: Profile;
   sources: Record<string, Source>;
+  place: Place;
 }) {
   return (
     <section aria-labelledby="dojazd-h">
@@ -23,8 +25,8 @@ export function StopsSection({
       ) : (
         <>
           <p className="lead">
-            Najbliższe przystanki i to, jak się z nich wsiada i wysiada. Odległość w linii prostej — przebieg i
-            nawierzchnia chodnika na dojściu nie są jeszcze oceniane.
+            Najbliższe przystanki i to, jak się z nich wsiada i wysiada. Trasę dojścia (schody, krawężniki,
+            nawierzchnia) ocenisz przyciskiem przy przystanku.
           </p>
           <ul className="reqs">
             {stops.map((s) => {
@@ -58,6 +60,22 @@ export function StopsSection({
                       Źródło: {sources[s.sourceId]?.name ?? s.sourceId}
                       {s.observedAt ? ` · stan na ${formatDate(s.observedAt)}` : ""}
                     </div>
+                    <p style={{ margin: "8px 0 0" }}>
+                      <a
+                        className="button secondary"
+                        href={`/trasa?${new URLSearchParams({
+                          fromLat: String(s.lat),
+                          fromLon: String(s.lon),
+                          toLat: String(place.lat),
+                          toLon: String(place.lon),
+                          fromName: s.name,
+                          toName: place.name,
+                          toId: place.id,
+                        })}`}
+                      >
+                        Trasa dojścia stąd
+                      </a>
+                    </p>
                   </div>
                 </li>
               );

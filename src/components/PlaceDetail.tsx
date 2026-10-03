@@ -108,7 +108,8 @@ export function PlaceDetail({
         ))}
       </div>
 
-      <StopsSection stops={stops} profile={profile} sources={sources} />
+      <RouteFromMe place={place} />
+      <StopsSection stops={stops} profile={profile} sources={sources} place={place} />
 
       <h2>Na mapie</h2>
       <MapView results={[{ place, assessment: a }]} height={260} />
@@ -189,5 +190,27 @@ function FeatureBlock({
         })}
       </ul>
     </section>
+  );
+}
+
+function RouteFromMe({ place }: { place: Place }) {
+  const go = () =>
+    navigator.geolocation?.getCurrentPosition((pos) => {
+      window.location.href = `/trasa?${new URLSearchParams({
+        fromLat: String(pos.coords.latitude),
+        fromLon: String(pos.coords.longitude),
+        toLat: String(place.lat),
+        toLon: String(place.lon),
+        fromName: "Twoja lokalizacja",
+        toName: place.name,
+        toId: place.id,
+      })}`;
+    });
+  return (
+    <p style={{ marginTop: 20 }}>
+      <button type="button" onClick={go}>
+        Trasa z mojej lokalizacji
+      </button>
+    </p>
   );
 }

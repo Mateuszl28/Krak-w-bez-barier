@@ -192,12 +192,15 @@ systemowego, cele dotykowe ≥ 48 dp.
 | Klawiatura | przejście Tab przez nagłówek, profil (strzałki), wyszukiwarkę, wyniki | wszystkie elementy osiągalne, fokus widoczny (3 px), logiczna kolejność |
 | Czytnik ekranu | nazwy dostępne (etykiety pól, role, `aria-live` dla liczby wyników, opisy ocen) | komunikaty o wynikach i ocenach odczytywane tekstem |
 | Kontrast | tokeny kolorów jasny / ciemny | tekst ≥ 4.5:1, elementy interfejsu ≥ 3:1 |
+| Strony trasy i asystenta (web) | axe-core | 0 naruszeń (także po udzieleniu odpowiedzi przez asystenta) |
+| Aplikacja mobilna — nazwy dla czytnika ekranu | automatyczny audyt drzewa dostępności (uiautomator) na 8 ekranach: wyszukiwarka, wyniki, asystent, potrzeby, info, karta miejsca, zgłoszenie | 99 elementów klikalnych — wszystkie z nazwą dostępną |
+| Aplikacja mobilna — cele dotykowe | ten sam audyt, próg 44 dp | początkowo 2 przełączniki 47×27 dp → cały wiersz z opisem jako przełącznik (≥ 52 dp) |
 | Mapa w formie tekstowej | lista wyników + karta miejsca zawierają wszystkie informacje z mapy | spełnione |
 
 **Ograniczenia i plan:** wersja angielska jest w aplikacji mobilnej (wersja webowa — po polsku, do tłumaczenia);
 brak testów z użytkownikami (osoby na wózkach, rodzice z
-wózkami, użytkownicy czytników ekranu) → sesje testowe przed wdrożeniem; pełny test TalkBack/VoiceOver aplikacji
-mobilnej → przed publikacją w sklepach.
+wózkami, użytkownicy czytników ekranu) → sesje testowe przed wdrożeniem; ręczny test z włączonym TalkBack/VoiceOver
+na urządzeniach → przed publikacją w sklepach.
 
 ## Prywatność i bezpieczeństwo
 

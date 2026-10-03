@@ -261,6 +261,38 @@ export function Banner({
   );
 }
 
+/** Przełącznik z opisem: cały wiersz jest celem dotykowym (≥ 48 dp) z rolą "switch". */
+export function SwitchRow({ label, value, onChange }: { label: string; value: boolean; onChange: (b: boolean) => void }) {
+  const t = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: value }}
+      onPress={() => onChange(!value)}
+      style={{ flexDirection: "row", alignItems: "center", minHeight: 52, gap: 12 }}
+    >
+      <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>{label}</Text>
+      {/* Wskaźnik czysto wizualny — stan ogłasza rola "switch" całego wiersza. */}
+      <View
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+        style={{
+          width: 52,
+          height: 32,
+          borderRadius: 16,
+          padding: 3,
+          backgroundColor: value ? t.accent : t.line,
+          alignItems: value ? "flex-end" : "flex-start",
+          justifyContent: "center",
+        }}
+      >
+        <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: "#ffffff" }} />
+      </View>
+    </Pressable>
+  );
+}
+
 /** Rozwijana sekcja — szczegóły na żądanie zamiast ściany tekstu. */
 export function Disclosure({
   title,

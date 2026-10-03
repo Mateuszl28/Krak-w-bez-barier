@@ -1,6 +1,6 @@
-import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { ProfileTiles } from "../../components/ProfileTiles";
-import { Card, Chip, P, SectionTitle } from "../../components/ui";
+import { Card, Chip, P, SectionTitle, SwitchRow } from "../../components/ui";
 import { useProfile } from "../../lib/profile";
 import type { Profile } from "../../lib/shared";
 import { useT } from "../../lib/strings";
@@ -27,10 +27,7 @@ export default function ProfileScreen() {
   );
 
   const toggle = (label: string, value: boolean, onChange: (b: boolean) => void) => (
-    <View style={styles.row}>
-      <Text style={{ color: t.text, fontSize: 16, flex: 1 }}>{label}</Text>
-      <Switch accessibilityLabel={label} value={value} onValueChange={onChange} />
-    </View>
+    <SwitchRow label={label} value={value} onChange={onChange} />
   );
 
   return (
@@ -58,5 +55,4 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   label: { fontSize: 16, fontWeight: "700" },
   input: { minHeight: 50, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, fontSize: 16 },
-  row: { flexDirection: "row", alignItems: "center", minHeight: 48, gap: 12 },
 });

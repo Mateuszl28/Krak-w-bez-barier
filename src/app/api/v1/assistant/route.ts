@@ -61,11 +61,14 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof AssistantRateLimited) {
       const en = body?.lang === "en";
+      const secs = err.retryAfterS;
+      const wait =
+        secs < 90 ? `${secs} s` : secs < 5400 ? `${Math.round(secs / 60)} min` : `${Math.round(secs / 3600)} ${en ? "h" : "godz."}`;
       return NextResponse.json(
         {
           error: en
-            ? `The AI assistant has reached the free-plan request limit. Try again in about ${err.retryAfterS} s — search and route checks work as usual.`
-            : `Asystent AI wyczerpał limit zapytań darmowego planu. Spróbuj za ok. ${err.retryAfterS} s — wyszukiwarka i ocena tras działają normalnie.`,
+            ? `The AI assistant has reached the free-plan request limit. Try again in about ${wait} — search and route checks work as usual.`
+            : `Asystent AI wyczerpał limit zapytań darmowego planu. Spróbuj za ok. ${wait} — wyszukiwarka i ocena tras działają normalnie.`,
           retryAfterS: err.retryAfterS,
         },
         { status: 429, headers: { "retry-after": String(err.retryAfterS) } },
