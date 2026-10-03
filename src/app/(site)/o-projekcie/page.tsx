@@ -62,8 +62,8 @@ export default async function About() {
         </table>
       </div>
       <p>
-        Wykorzystane zbiory miejskie: warstwy ZTP „Toalety publiczne” i „Miejsca postojowe OzN” (ArcGIS, eksport
-        GeoJSON). Sprawdziliśmy też rozkłady GTFS ZTP — pola dostępności dla wózków są w nich puste, dlatego ich nie
+        Wykorzystane zbiory miejskie: warstwy ZTP „Toalety publiczne”, „Miejsca postojowe OzN” i „Przystanki
+        Komunikacji Miejskiej w Krakowie” (ArcGIS, eksport GeoJSON). Sprawdziliśmy też rozkłady GTFS ZTP — pola dostępności dla wózków są w nich puste, dlatego ich nie
         używamy.
       </p>
 

@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import type { Category, Fact, Place, Source, SourceStatus } from "./shared";
+import type { Category, Fact, NearbyStop, Place, Source, SourceStatus } from "./shared";
 
 // Backend (Next.js) z importem danych i API. W trybie deweloperskim bierzemy
 // adres komputera, z którego Expo serwuje aplikację; w produkcji — EXPO_PUBLIC_API_URL.
@@ -18,6 +18,7 @@ export interface PlaceResponse {
   status: SourceStatus[];
   sources: Record<string, Source>;
   place: Place;
+  stops?: NearbyStop[];
 }
 
 /** Wynik z informacją, czy pochodzi z kopii zapisanej na telefonie. */

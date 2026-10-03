@@ -2,6 +2,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router
 import { useCallback, useMemo, useState } from "react";
 import { Linking, Platform, ScrollView, Text, View } from "react-native";
 import { PlacesMap } from "../../components/PlacesMap";
+import { StopsList } from "../../components/StopsList";
 import {
   Banner,
   Button,
@@ -22,7 +23,6 @@ import {
   CATEGORY_LABELS,
   FEATURE_LABELS,
   FEATURE_ORDER,
-  SOURCE_KIND_LABELS,
   VERDICT_TEXT,
   assess,
   formatDate,
@@ -178,6 +178,9 @@ export default function PlaceScreen() {
         ))}
       </View>
 
+      <H2>Dojazd komunikacją miejską</H2>
+      <StopsList stops={loaded.data.stops ?? []} profile={profile} sources={sources} />
+
       <H2>Na mapie</H2>
       <PlacesMap results={[{ place, assessment: a }]} height={240} />
 
@@ -257,7 +260,7 @@ function FeatureBlock({
             </Text>
             {f.sample && <Tag kind="sample" label="Dane przykładowe" />}
             <Text style={{ color: t.muted, fontSize: 14 }}>
-              Źródło: {src ? `${src.name} (${SOURCE_KIND_LABELS[src.kind]})` : f.sourceId} · stan na{" "}
+              Źródło: {src?.name ?? f.sourceId} · stan na{" "}
               {f.observedAt ? formatDate(f.observedAt) : "datę nieznaną"}
             </Text>
             {f.ref && (

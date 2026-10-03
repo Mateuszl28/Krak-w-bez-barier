@@ -84,3 +84,24 @@ export interface Profile {
   needChangingTable: boolean;
   avoidCobbles: boolean;
 }
+
+/** Przystanek komunikacji miejskiej — punkt startowy dojścia do miejsca. */
+export interface TransitStop {
+  id: string;
+  name: string;
+  mode: "bus" | "tram" | "bus_tram";
+  lat: number;
+  lon: number;
+  /** "kassel" — peron podwyższony (wsiadanie niemal bez progu), "standard", "none" — z poziomu jezdni. */
+  kerb?: "kassel" | "standard" | "none";
+  /** Nawierzchnia peronu: "smooth" | "paving" | "gravel". */
+  surface?: string;
+  shelters: number;
+  benches: number;
+  sourceId: string;
+  observedAt: string;
+}
+
+export interface NearbyStop extends TransitStop {
+  distanceM: number;
+}

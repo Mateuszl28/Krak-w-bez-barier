@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { assess, viewFeature } from "./assess.ts";
+import { assess, assessStop, viewFeature } from "./assess.ts";
 import { PRESETS } from "./labels.ts";
 import type { Fact, Place } from "./model.ts";
 import { SOURCES } from "./sources.ts";
@@ -95,4 +95,14 @@ test("tagi OSM → fakty", () => {
       ["toilet", true, "2025-06-01"],
     ],
   );
+});
+
+test("przystanek: peron Kassel, brak peronu, brak danych", () => {
+  const stop = { id: "1", name: "X 01", mode: "tram" as const, lat: 0, lon: 0, shelters: 1, benches: 0, sourceId: "krakow_open_data", observedAt: "2026-01-01" };
+  const kassel = assessStop({ ...stop, kerb: "kassel", surface: "smooth" }, PRESETS.wheelchair_manual);
+  assert.equal(kassel.verdict, "meets");
+  assert.equal(kassel.rest, true);
+  assert.equal(assessStop({ ...stop, kerb: "none", surface: "paving" }, PRESETS.wheelchair_manual).verdict, "barrier");
+  assert.equal(assessStop({ ...stop, kerb: "none", surface: "paving" }, PRESETS.stroller).verdict, "incomplete");
+  assert.equal(assessStop(stop, PRESETS.wheelchair_manual).verdict, "incomplete");
 });

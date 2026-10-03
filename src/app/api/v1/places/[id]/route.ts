@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assess } from "@/lib/assess";
-import { loadCity } from "@/lib/repository";
+import { loadCity, nearbyStops } from "@/lib/repository";
 import { offlineFrom, profileFrom } from "@/lib/request";
 import { SOURCES } from "@/lib/sources";
 
@@ -15,6 +15,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     status: city.status,
     sources: SOURCES,
     place,
+    stops: nearbyStops(city.stops, place),
     ...(profile ? { assessment: assess(place, profile, SOURCES) } : {}),
   });
 }

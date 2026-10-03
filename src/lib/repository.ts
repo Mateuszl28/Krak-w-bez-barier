@@ -4,7 +4,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ParkingSpot } from "./krakow-official.ts";
-import type { Category, Fact, FactValue, FeatureKey, Place, SourceStatus } from "./model.ts";
+import type { Category, Fact, FactValue, FeatureKey, NearbyStop, Place, SourceStatus, TransitStop } from "./model.ts";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PARKING_RADIUS_M = 150;
@@ -41,6 +41,7 @@ export interface CityData {
   config: CityConfig;
   places: Place[];
   byId: Map<string, Place>;
+  stops: TransitStop[];
   status: SourceStatus[];
 }
 
@@ -123,13 +124,20 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
   });
 
   let parking: ParkingSpot[] = [];
+  let stops: TransitStop[] = [];
   let parkingDate = "";
   await load("krakow_open_data", async () => {
-    const official = await readJson<{ fetchedAt: string; places: Place[]; parking: ParkingSpot[] }>(
+    const official = await readJson<{
+      fetchedAt: string;
+      places: Place[];
+      parking: ParkingSpot[];
+      stops?: TransitStop[];
+    }>(
       path.join(dir, "official.json"),
     );
     for (const p of official.places) byId.set(p.id, { ...p, facts: [...p.facts] });
     parking = official.parking;
+    stops = official.stops ?? [];
     parkingDate = official.fetchedAt.slice(0, 10);
     return { fetchedAt: official.fetchedAt, records: official.places.length + official.parking.length };
   });
@@ -198,7 +206,7 @@ async function buildCity(cityId: string, offline: string[]): Promise<CityData> {
   }
 
   const places = [...byId.values()];
-  return { config, places, byId, status };
+  return { config, places, byId, stops, status };
 }
 
 /** Wyszukiwanie bez polskich znaków i wielkości liter. */
@@ -245,4 +253,15 @@ export function search(places: Place[], opts: SearchOptions): Place[] {
     return b.facts.length - a.facts.length;
   });
   return result.slice(0, opts.limit ?? 50);
+}
+
+/** Najbliższe przystanki (w linii prostej) — początek dojścia do miejsca. */
+export function nearbyStops(stops: TransitStop[], place: Place, limit = 4, radiusM = 600): NearbyStop[] {
+  const here: [number, number] = [place.lat, place.lon];
+  return stops
+    .filter((s) => Math.abs(s.lat - place.lat) < 0.01 && Math.abs(s.lon - place.lon) < 0.015)
+    .map((s) => ({ ...s, distanceM: Math.round(distanceM(here, [s.lat, s.lon])) }))
+    .filter((s) => s.distanceM <= radiusM)
+    .sort((a, b) => a.distanceM - b.distanceM)
+    .slice(0, limit);
 }

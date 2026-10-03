@@ -2,7 +2,7 @@
 // nigdy nie jest traktowany jako potwierdzenie dostępności, a sprzeczne dane
 // pokazujemy obok siebie zamiast wybierać jedną wersję.
 
-import type { Fact, FactValue, FeatureKey, Place, Profile, Source } from "./model.ts";
+import type { Fact, FactValue, FeatureKey, Place, Profile, Source, TransitStop } from "./model.ts";
 import { formatValue } from "./labels.ts";
 
 /** Dane starsze niż 2 lata oznaczamy jako potencjalnie nieaktualne. */
@@ -308,3 +308,45 @@ export const VERDICT_TEXT: Record<Verdict, { title: string; body: string }> = {
     body: "Nie możemy potwierdzić dostępności. Brak informacji nie oznacza, że miejsce jest dostępne.",
   },
 };
+
+export interface StopAssessment {
+  verdict: Verdict;
+  boarding: RequirementResult;
+  platform: RequirementResult;
+  /** Wiata lub ławka na przystanku — miejsce odpoczynku. */
+  rest?: boolean;
+}
+
+/** Ocena przystanku jako początku dojścia: wsiadanie/wysiadanie i peron. */
+export function assessStop(stop: TransitStop, p: Profile): StopAssessment {
+  const wheelchair = p.maxStepCm < TYPICAL_STEP_CM;
+  const base = { id: "boarding", label: "Wsiadanie i wysiadanie", keys: [] as FeatureKey[] };
+  const boarding: RequirementResult =
+    stop.kerb === "kassel"
+      ? { ...base, outcome: "ok", detail: "Peron podwyższony (krawężnik Kassel) — do pojazdu niskopodłogowego niemal bez progu." }
+      : stop.kerb === "standard"
+        ? wheelchair
+          ? { ...base, outcome: "unknown", detail: "Zwykły krawężnik peronowy — wjazd zwykle wymaga rampy w pojeździe." }
+          : { ...base, outcome: "ok", detail: "Zwykły krawężnik peronowy." }
+        : stop.kerb === "none"
+          ? wheelchair
+            ? { ...base, outcome: "barrier", detail: "Brak peronu — wsiadanie z poziomu jezdni, duża różnica wysokości." }
+            : { ...base, outcome: "unknown", detail: "Brak peronu — wsiadanie z poziomu jezdni." }
+          : { ...base, outcome: "unknown", detail: "Brak informacji o peronie." };
+
+  const pbase = { id: "platform", label: "Nawierzchnia peronu", keys: [] as FeatureKey[] };
+  const platform: RequirementResult =
+    stop.surface === "gravel"
+      ? { ...pbase, outcome: wheelchair || p.avoidCobbles ? "barrier" : "unknown", detail: "Peron nieutwardzony." }
+      : stop.surface
+        ? { ...pbase, outcome: "ok", detail: `Peron: ${formatValue("surface", stop.surface)}.` }
+        : { ...pbase, outcome: "unknown", detail: "Brak informacji o nawierzchni peronu." };
+
+  const reqs = [boarding, platform];
+  const verdict: Verdict = reqs.some((r) => r.outcome === "barrier")
+    ? "barrier"
+    : reqs.every((r) => r.outcome === "ok")
+      ? "meets"
+      : "incomplete";
+  return { verdict, boarding, platform, rest: stop.shelters + stop.benches > 0 };
+}

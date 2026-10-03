@@ -55,6 +55,8 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 - Widżet do osadzenia na stronie hotelu / wydarzenia (`/widget/<id>`, działa bez JavaScriptu).
 - Publiczne API z oceną dopasowania (`/api/v1/places`).
 - Mapa (Leaflet + OSM) jako **dodatek** — te same informacje są w liście i na karcie miejsca.
+- **Dojazd:** najbliższe przystanki KMK przy każdym miejscu z oceną wsiadania (peron Kassel / zwykły krawężnik /
+  wsiadanie z jezdni), nawierzchni peronu i miejsc odpoczynku (wiaty, ławki) — z inwentaryzacji ZTP.
 - PWA: instalacja na telefonie, podstawowe działanie przy słabym zasięgu.
 
 ## Źródła danych
@@ -65,6 +67,7 @@ Backend (Next.js) importuje dane, udostępnia API, przyjmuje zgłoszenia i serwu
 | OSM API | aktualny stan pojedynczego obiektu | na żądanie z karty miejsca | ODbL 1.0 |
 | Otwarte dane Krakowa — ZTP: [Toalety publiczne](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Toalety_publiczne_4/FeatureServer/0) | 50 toalet: dostępność, sposób wjazdu (poziom 0 / platforma / winda / schodołaz), przewijak, godziny | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Otwarte dane Krakowa — ZTP: [Miejsca postojowe OzN](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Miejsca_postojowe_OZN/FeatureServer/0) | 2037 miejsc postojowych; przypisujemy je miejscom w promieniu 150 m | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
+| Otwarte dane Krakowa — ZTP: [Przystanki KMK](https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services/Przystanki_Komunikacji_Miejskiej_w_Krakowie/FeatureServer/0) | 3756 przystanków: krawężnik peronowy (Kassel / zwykły / brak), nawierzchnia peronu, wiaty, ławki | `npm run ingest:official` | dane publiczne GMK, z podaniem źródła |
 | Deklaracje właścicieli | szczegółowe dane od zarządcy obiektu | formularz / `accessibility.json` | CC BY 4.0 |
 | Zgłoszenia użytkowników | obserwacje odwiedzających | formularz na karcie miejsca | CC BY 4.0 |
 
@@ -115,12 +118,59 @@ npm test             # testy logiki oceny
 Hosting: dowolny serwer Node.js lub Vercel (bez dodatkowej konfiguracji). Zgłoszenia w prototypie są zapisywane w
 pliku (lokalnie) / `/tmp` (Vercel); w wersji produkcyjnej — baza danych (np. PostgreSQL).
 
+## Uruchomienie i utrzymanie poza infrastrukturą UMK
+
+| Obszar | Kto odpowiada | Jak |
+|---|---|---|
+| Produkt i rozwój | zespół projektu (docelowo spółka / fundacja prowadząca usługę) | roadmapa, wdrożenia w kolejnych miastach |
+| Hosting | operator usługi | backend: Vercel lub dowolny serwer Node.js / kontener; baza zgłoszeń: PostgreSQL (np. Supabase, Neon) |
+| Aktualizacje danych | automatycznie | codzienny import OSM i danych miejskich (cron), przy błędzie zostaje ostatnia kopia z datą |
+| Bezpieczeństwo | operator usługi | HTTPS, walidacja i limity zgłoszeń, brak danych osobowych, aktualizacje zależności, kopie zapasowe bazy |
+| Obsługa zgłoszeń | moderator operatora + właściciele obiektów | kolejka zgłoszeń, potwierdzanie przez inne źródło, przekazywanie poprawek do OSM |
+| Aplikacja mobilna | operator usługi | publikacja w Google Play / App Store przez EAS, aktualizacje OTA |
+
+**Szacunkowe koszty miesięczne (jedno miasto):** hosting backendu 0–20 USD (Vercel Hobby/Pro), baza danych 0–25 USD,
+konta deweloperskie Google Play 25 USD jednorazowo i Apple 99 USD rocznie, kafelki mapy — przy większym ruchu własny
+serwer kafelków lub dostawca komercyjny (OSM nie pozwala na intensywne korzystanie z tile.openstreetmap.org). Koszty
+pokrywają abonamenty obiektów i API (patrz „Model biznesowy”).
+
+Rozwiązanie nie wymaga dostępu do wewnętrznych systemów UMK ani MJO i nie zakłada ręcznego utrzymywania bazy przez
+Miasto — korzysta wyłącznie z publicznych danych i usług.
+
+## Zależności, licencje, przenośność
+
+- **Zewnętrzni dostawcy danych:** OpenStreetMap (Overpass API, OSM API — ODbL, wymagane oznaczenie źródła),
+  ArcGIS Online ZTP Kraków (dane publiczne GMK, z podaniem źródła i daty pobrania), kafelki mapy OSM.
+  Każde źródło może być niedostępne — aplikacja działa wtedy na ostatniej kopii i informuje o tym użytkownika.
+- **Komponenty:** Next.js, React, Leaflet, Expo / React Native — licencje MIT / BSD. Kod projektu: MIT.
+- **Przenośność:** backend to zwykła aplikacja Node.js (bez zależności od konkretnej chmury), dane w plikach JSON lub
+  bazie SQL, aplikacja mobilna budowana lokalnie albo w EAS.
+- **Kolejne miasto:** katalog `data/<miasto>/city.json` (granice obszaru, lista źródeł) → `npm run ingest -- <miasto>`
+  pobiera OSM automatycznie; lokalne otwarte dane — nowy adapter zwracający te same typy co
+  `src/lib/krakow-official.ts`.
+
 ## Dostępność cyfrowa (cel: WCAG 2.2 AA)
 
 Obsługa klawiaturą i widoczny fokus, link „Przejdź do treści”, semantyczne nagłówki i etykiety, komunikaty
 `aria-live` o wynikach, kontrast ≥ 4.5:1 w trybie jasnym i ciemnym, stan nigdy nie tylko kolorem, cele dotykowe ≥ 44 px,
-tekstowa alternatywa dla mapy. Znane ograniczenia: tylko język polski; opisy znaczników mapy dla czytników są
-ograniczone; brak audytu z udziałem użytkowników.
+tekstowa alternatywa dla mapy. W aplikacji mobilnej: role i etykiety dla TalkBack/VoiceOver, skalowanie tekstu
+systemowego, cele dotykowe ≥ 48 dp.
+
+### Kontrola dostępności głównego scenariusza (3 października 2026)
+
+| Sprawdzenie | Jak | Wynik |
+|---|---|---|
+| Automatyczny test WCAG 2.2 A/AA | axe-core 4.10 na: wyszukiwarce (lista), karcie miejsca, źródłach, widżecie | 0 naruszeń |
+| Widok mapy | axe-core | 1 problem: `target-size` — nakładające się znaczniki w gęstych miejscach |
+| Klawiatura | przejście Tab przez nagłówek, profil (strzałki), wyszukiwarkę, wyniki | wszystkie elementy osiągalne, fokus widoczny (3 px), logiczna kolejność |
+| Czytnik ekranu | nazwy dostępne (etykiety pól, role, `aria-live` dla liczby wyników, opisy ocen) | komunikaty o wynikach i ocenach odczytywane tekstem |
+| Kontrast | tokeny kolorów jasny / ciemny | tekst ≥ 4.5:1, elementy interfejsu ≥ 3:1 |
+| Mapa w formie tekstowej | lista wyników + karta miejsca zawierają wszystkie informacje z mapy | spełnione |
+
+**Ograniczenia i plan:** nakładające się znaczniki mapy → grupowanie znaczników (clustering) i większe odstępy;
+tylko język polski → wersja angielska dla turystów; brak testów z użytkownikami (osoby na wózkach, rodzice z
+wózkami, użytkownicy czytników ekranu) → sesje testowe przed wdrożeniem; pełny test TalkBack/VoiceOver aplikacji
+mobilnej → przed publikacją w sklepach.
 
 ## Prywatność i bezpieczeństwo
 

@@ -7,16 +7,16 @@ import {
   CATEGORY_LABELS,
   FEATURE_LABELS,
   FEATURE_ORDER,
-  SOURCE_KIND_LABELS,
   formatDate,
   formatValue,
 } from "@/lib/labels";
-import type { Place, Source, SourceStatus } from "@/lib/model";
+import type { NearbyStop, Place, Source, SourceStatus } from "@/lib/model";
 import { LiveCheck } from "./LiveCheck";
 import { ProfilePicker } from "./ProfilePicker";
 import { useProfile } from "./ProfileProvider";
 import { ReportForm } from "./ReportForm";
 import { SourceStatusBanner } from "./SourceStatusBanner";
+import { StopsSection } from "./StopsSection";
 import { OUTCOME_ICON, OUTCOME_LABEL, VERDICT_ICON } from "./Verdict";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
@@ -25,10 +25,12 @@ export function PlaceDetail({
   place,
   sources,
   status,
+  stops,
 }: {
   place: Place;
   sources: Record<string, Source>;
   status: SourceStatus[];
+  stops: NearbyStop[];
 }) {
   const { profile } = useProfile();
   const a = useMemo(() => assess(place, profile, sources), [place, profile, sources]);
@@ -106,6 +108,8 @@ export function PlaceDetail({
         ))}
       </div>
 
+      <StopsSection stops={stops} profile={profile} sources={sources} />
+
       <h2>Na mapie</h2>
       <MapView results={[{ place, assessment: a }]} height={260} />
 
@@ -164,7 +168,7 @@ function FeatureBlock({
                 </>
               )}
               <div className="src">
-                Źródło: {src ? `${src.name} (${SOURCE_KIND_LABELS[src.kind]})` : f.sourceId} · stan na{" "}
+                Źródło: {src?.name ?? f.sourceId} · stan na{" "}
                 {f.observedAt ? formatDate(f.observedAt) : "datę nieznaną"}
                 {f.ref && (
                   <>

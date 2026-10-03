@@ -1,13 +1,14 @@
 // Adapter otwartych danych Krakowa (warstwy ZTP / GMK publikowane w ArcGIS Online).
 // Inne miasto = własny adapter zwracający te same typy (Place / ParkingSpot).
 
-import type { Fact, Place } from "./model.ts";
+import type { Fact, Place, TransitStop } from "./model.ts";
 
 export const OFFICIAL_SOURCE_ID = "krakow_open_data";
 
 const ARCGIS = "https://services-eu1.arcgis.com/svTzSt3AvH7sK6q9/arcgis/rest/services";
 export const TOILETS_URL = `${ARCGIS}/Toalety_publiczne_4/FeatureServer/0/query`;
 export const PARKING_URL = `${ARCGIS}/Miejsca_postojowe_OZN/FeatureServer/0/query`;
+export const STOPS_URL = `${ARCGIS}/Przystanki_Komunikacji_Miejskiej_w_Krakowie/FeatureServer/0/query`;
 
 export interface Feature<P> {
   geometry: { type: "Point"; coordinates: [number, number] } | null;
@@ -102,4 +103,51 @@ export async function fetchArcgis<P>(url: string): Promise<Feature<P>[]> {
     all.push(...page.features);
     if (page.features.length < 1000) return all;
   }
+}
+
+interface StopProps {
+  OBJECTID: number;
+  kod_busman?: string;
+  Nazwa_przystanku_nr?: string;
+  Typ_przystanku?: string;
+  Nawierzchnia_peronu?: string | null;
+  "Krawężnik_peronowy"?: string | null;
+  Wiata_liczba?: number | null;
+  "Ławki_poza_wiatą"?: number | null;
+  "Ławki_inne_poza_wiatą"?: number | null;
+  Inne_do_siedzenia?: number | null;
+  EditDate?: number;
+}
+
+const STOP_SURFACE: Record<string, string> = {
+  asfalt: "smooth",
+  beton: "smooth",
+  "płyty_chodnikowe": "smooth",
+  kostka: "paving",
+  utwardzone_inne: "paving",
+  nieutwardzne_inne: "gravel",
+};
+
+/** Inwentaryzacja przystanków ZTP → przystanek z informacją o wsiadaniu i odpoczynku. */
+export function stopToTransit(f: Feature<StopProps>): TransitStop | undefined {
+  if (!f.geometry) return undefined;
+  const p = f.properties;
+  const [lon, lat] = f.geometry.coordinates;
+  const type = p.Typ_przystanku ?? "";
+  const kerbRaw = p["Krawężnik_peronowy"];
+  const kerb = kerbRaw === "kassel-kerb" ? "kassel" : kerbRaw === "tak" ? "standard" : kerbRaw === "nie" ? "none" : undefined;
+  const surface = p.Nawierzchnia_peronu ? STOP_SURFACE[p.Nawierzchnia_peronu] : undefined;
+  return {
+    id: p.kod_busman ?? String(p.OBJECTID),
+    name: (p.Nazwa_przystanku_nr ?? "Przystanek").trim(),
+    mode: type.includes("T") && type.includes("A") ? "bus_tram" : type.includes("T") ? "tram" : "bus",
+    lat,
+    lon,
+    ...(kerb ? { kerb } : {}),
+    ...(surface ? { surface } : {}),
+    shelters: p.Wiata_liczba ?? 0,
+    benches: (p["Ławki_poza_wiatą"] ?? 0) + (p["Ławki_inne_poza_wiatą"] ?? 0) + (p.Inne_do_siedzenia ?? 0),
+    sourceId: OFFICIAL_SOURCE_ID,
+    observedAt: p.EditDate ? new Date(p.EditDate).toISOString().slice(0, 10) : "",
+  };
 }

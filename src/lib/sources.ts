@@ -21,7 +21,7 @@ export const SOURCES: Record<string, Source> = {
     license: "Dane publiczne Gminy Miejskiej Kraków — wykorzystanie z podaniem źródła i daty pobrania",
     updateFrequency: "Import codziennie z ArcGIS ZTP; data przy informacji = data ostatniej edycji rekordu u wydawcy",
     description:
-      "Toalety publiczne (dostępność, sposób wjazdu, przewijak) oraz inwentaryzacja miejsc postojowych dla osób z niepełnosprawnościami.",
+      "Toalety publiczne (dostępność, sposób wjazdu, przewijak), inwentaryzacja miejsc postojowych dla osób z niepełnosprawnościami oraz przystanków (perony, wiaty, ławki).",
   },
   owner_declarations: {
     id: "owner_declarations",
